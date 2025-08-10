@@ -300,7 +300,7 @@ void hyperamp_server_main_loop(int max_messages)
         // 如果没有找到消息，定期显示等待状态
         if (!found_message) {
             g_check_counter++;
-            if (g_check_counter % 50 == 0) {  // 每5秒显示一次状态
+            if (g_check_counter % 500 == 0) {  // 每5秒显示一次状态
                 printf("[kernel] Waiting... (Check #%d, Root queue proc_ing_h=%u, buf_size=%u)\n", 
                        g_check_counter, g_root_q_vaddr->proc_ing_h, g_root_q_vaddr->buf_size);
             }
