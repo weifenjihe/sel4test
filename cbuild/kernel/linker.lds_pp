@@ -441,10 +441,10 @@
  */
        
 ENTRY(_start)
-KERNEL_OFFSET = ((0xffffff8000000000 - 0x0) + 0xc0000000) - 0xc0000000;
+KERNEL_OFFSET = ((0xffffff8000000000 - 0x0) + 0xb0000000) - 0xb0000000;
 SECTIONS
 {
-    . = ((0xffffff8000000000 - 0x0) + 0xc0000000);
+    . = ((0xffffff8000000000 - 0x0) + 0xb0000000);
     .boot . : AT(ADDR(.boot) - KERNEL_OFFSET)
     {
         *(.boot.text)

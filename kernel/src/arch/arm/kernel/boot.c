@@ -23,6 +23,7 @@
 #include <arch/machine/timer.h>
 #include <arch/machine/fpu.h>
 #include <arch/machine/tlb.h>
+#include <shared_memory.h>  // 新增：共享内存支持
 
 #ifdef CONFIG_ARM_SMMU
 #include <drivers/smmu/smmuv2.h>
@@ -627,7 +628,16 @@ static BOOT_CODE bool_t try_init_kernel(
 
     printf("Booting all finished, dropped to user space\n");
 
-    /* kernel successfully initialized */
+    /* 初始化共享内存通信 */
+    init_shared_memory_kernel();
+    
+    /* 测试共享内存通信功能 */
+    get_shared_memory_status();
+    test_shared_memory_communication();
+    /* 启动HyperAMP消息服务器 - 等待Root Linux消息 */
+    printf("Starting HyperAMP message server...\n");
+    hyperamp_server_main_loop(10);  // 处理最多10条消息
+
     return true;
 }
 

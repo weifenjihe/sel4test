@@ -33,10 +33,10 @@
 #include <sel4utils/stack.h>
 #include <sel4utils/process.h>
 #include <sel4test/test.h>
+#include <sel4/bootinfo_types.h>
 
 #include <simple/simple.h>
 #include <simple-default/simple-default.h>
-#include <sel4/bootinfo_types.h>
 
 #include <utils/util.h>
 
@@ -81,11 +81,10 @@ static elf_t tests_elf;
 static void init_env(driver_env_t env)
 {
     allocman_t *allocman;
-
     reservation_t virtual_reservation;
     int error;
 
-    printf("=== Starting init_env for Phytium Pi platform ===\n");
+    printf("=== Starting init_env for Phytium Pi platform ===");
     
     /* create an allocator */
     printf("Creating allocator with pool size: %zu bytes\n", ALLOCATOR_STATIC_POOL_SIZE);
@@ -149,39 +148,31 @@ static void init_env(driver_env_t env)
     printf("Virtual pool configured successfully\n");
 
     printf("Initializing IO operations\n");
-    /* ################ change to 0 to enable FDT processing ################*/
+    
     /* WORKAROUND: Skip FDT processing in hypervisor environment to avoid MMIO faults
      * Root cause: FDT parsing in simple_get_extended_bootinfo causes invalid memory access
      * that triggers MMIO faults at addresses like 0x47f8xx in hypervisor environment */
-
     printf("WORKAROUND: Manually initializing IO ops without FDT for hypervisor compatibility\n");
     memset(&env->ops, 0, sizeof(env->ops));
     
     /* Initialize malloc ops */
-    printf("Debug: Initializing malloc ops\n");
     error = sel4platsupport_new_malloc_ops(&env->ops.malloc_ops);
     ZF_LOGF_IF(error, "Failed to initialise malloc ops, error: %d", error);
     
     /* Initialize io mapper */
-    printf("Debug: Initializing io mapper\n");
     error = sel4platsupport_new_io_mapper(&env->vspace, &env->vka, &env->ops.io_mapper);
     ZF_LOGF_IF(error, "Failed to initialise io mapper, error: %d", error);
     
-    /* Skip FDT initialization - set to NULL */
-    printf("Debug: Skipping FDT initialization for hypervisor compatibility\n");
+    /* Skip FDT initialization - set to NULL for hypervisor compatibility */
     env->ops.io_fdt.cookie = NULL;
-    env->ops.io_fdt.get_fn = NULL;  // This will cause FDT operations to return NULL
+    env->ops.io_fdt.get_fn = NULL;  
     
     /* Initialize IRQ ops */
-    printf("Debug: Initializing IRQ ops\n"); 
     error = sel4platsupport_new_irq_ops(&env->ops.irq_ops, &env->vka, &env->simple, 
                                        DEFAULT_IRQ_INTERFACE_CONFIG, &env->ops.malloc_ops);
     ZF_LOGF_IF(error, "Failed to initialise IRQ ops, error: %d", error);
-    /*################*/
+    
     printf("IO operations initialized successfully (without FDT)\n");
-    // error = sel4platsupport_new_io_ops(&env->vspace, &env->vka, &env->simple, &env->ops);
-    // ZF_LOGF_IF(error, "Failed to initialise IO ops, error: %d", error);
-    // printf("IO operations initialized successfully\n");
     
     printf("=== init_env completed successfully ===\n");
 }
@@ -763,10 +754,12 @@ int main(void)
     seL4_DebugNameThread(seL4_CapInitThreadTCB, "sel4test-driver");
     ZF_LOGI("Debug thread naming completed");
 #endif
+
     /* Zero-initialize the global environment structure to prevent garbage values */
     ZF_LOGI("Zero-initializing global environment structure");
     memset(&env, 0, sizeof(env));
     ZF_LOGI("Environment structure zeroed");
+
     /* initialise libsel4simple, which abstracts away which kernel version
      * we are running on */
     ZF_LOGI("Initializing simple interface with BootInfo");

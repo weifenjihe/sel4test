@@ -5,6 +5,10 @@
  */
 #pragma once
 
+/* HVISOR COMPATIBILITY: Disable ZF logging globally to avoid MMIO issues */
+#include <utils/zf_log.h>
+#define ZF_LOG_LEVEL ZF_LOG_NONE
+
 #include <vka/vka.h>
 #include <vspace/vspace.h>
 #include <sel4utils/thread.h>

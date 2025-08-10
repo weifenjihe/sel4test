@@ -10,7 +10,7 @@
 
 #pragma once
 
-#define PHYS_BASE_RAW 0xc0000000
+#define PHYS_BASE_RAW 0xb0000000
 
 #ifndef __ASSEMBLER__
 
@@ -390,6 +390,678 @@ static const kernel_frame_t BOOT_RODATA kernel_device_frames[] = {
         .armExecuteNever = true,
         .userAvailable = false
     },
+    {
+        .paddr = 0x308a0000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x31000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a1000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x32000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a2000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x33000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a3000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x34000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a4000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x35000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a5000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x36000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a6000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x37000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a7000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x38000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a8000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x39000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a9000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x3a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308aa000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x3b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ab000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x3c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ac000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x3d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ad000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x3e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ae000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x3f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308af000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x40000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b0000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x41000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b1000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x42000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b2000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x43000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b3000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x44000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b4000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x45000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b5000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x46000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b6000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x47000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b7000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x48000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b8000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x49000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b9000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x4a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ba000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x4b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308bb000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x4c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308bc000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x4d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308bd000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x4e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308be000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x4f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308bf000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x50000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c0000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x51000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c1000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x52000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c2000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x53000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c3000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x54000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c4000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x55000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c5000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x56000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c6000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x57000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c7000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x58000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c8000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x59000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c9000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x5a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ca000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x5b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308cb000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x5c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308cc000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x5d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308cd000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x5e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ce000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x5f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308cf000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x60000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d0000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x61000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d1000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x62000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d2000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x63000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d3000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x64000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d4000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x65000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d5000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x66000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d6000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x67000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d7000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x68000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d8000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x69000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d9000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x6a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308da000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x6b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308db000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x6c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308dc000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x6d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308dd000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x6e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308de000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x6f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308df000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x70000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e0000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x71000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e1000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x72000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e2000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x73000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e3000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x74000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e4000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x75000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e5000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x76000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e6000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x77000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e7000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x78000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e8000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x79000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e9000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x7a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ea000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x7b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308eb000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x7c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ec000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x7d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ed000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x7e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ee000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x7f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ef000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x80000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f0000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x81000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f1000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x82000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f2000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x83000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f3000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x84000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f4000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x85000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f5000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x86000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f6000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x87000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f7000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x88000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f8000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x89000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f9000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x8a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fa000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x8b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fb000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x8c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fc000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x8d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fd000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x8e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fe000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x8f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ff000,
+        /* contains GICR_PPTR */
+        .pptr = KDEV_BASE + 0x90000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
 };
 
 /* Elements in kernel_device_frames may be enabled in specific configurations
@@ -405,13 +1077,13 @@ static const kernel_frame_t BOOT_RODATA kernel_device_frames[] = {
 static const p_region_t BOOT_RODATA avail_p_regs[] = {
     /* /memory@b0000000 */
     {
-        .start = 0xc0000000,
+        .start = 0xb0000000,
         .end   = 0xde000000
     },
     /* /memory@b0000000 */
     {
         .start = 0xde420000,
-        .end   = 0xf0000000
+        .end   = 0xe0000000
     },
 };
 

@@ -52,15 +52,8 @@ static int set_timeout(void *data, uint64_t ns, timeout_type_t type)
 static int get_resolution(void *data, uint64_t *resolution)
 {
     phytium_ltimer_t *ltimer = data;
-    if (ltimer->generic_timer.freq == 0) {
-        printf("Timer frequency is 0, generic_timer init may have failed");
-        *resolution = 1000;  // 默认1微秒分辨率
-        return -1;
-    }
     /* Resolution is 1/frequency seconds in nanoseconds */
     *resolution = NS_IN_S / ltimer->generic_timer.freq;
-    printf("Timer resolution is %lu ns\n", *resolution);
-    printf("Timer frequency is %u Hz\n", ltimer->generic_timer.freq);
     return 0;
 }
 
@@ -96,6 +89,7 @@ int ltimer_default_init(ltimer_t *ltimer, ps_io_ops_t ops, ltimer_callback_fn_t 
         ZF_LOGE("Failed to create ltimer for phytium");
         return error;
     }
+
     /* Set additional function pointers that create_ltimer_simple doesn't set */
     ltimer->get_resolution = get_resolution;
 

@@ -2491,7 +2491,7 @@ _Static_assert(17592186044416 <= (1ul << (47)), "ut_max_less_than_canonical");;
  */
 static inline __attribute__((__const__)) word_t physBase(void)
 {
-    return 0xc0000000;
+    return 0xb0000000;
 }
 
 /* INTERRUPTS */
@@ -2856,6 +2856,678 @@ static const kernel_frame_t __attribute__((__section__(".boot.rodata"))) kernel_
         .armExecuteNever = true,
         .userAvailable = false
     },
+    {
+        .paddr = 0x308a0000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x31000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a1000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x32000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a2000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x33000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a3000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x34000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a4000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x35000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a5000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x36000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a6000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x37000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a7000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x38000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a8000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x39000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308a9000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x3a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308aa000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x3b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ab000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x3c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ac000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x3d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ad000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x3e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ae000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x3f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308af000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x40000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b0000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x41000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b1000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x42000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b2000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x43000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b3000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x44000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b4000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x45000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b5000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x46000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b6000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x47000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b7000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x48000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b8000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x49000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308b9000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x4a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ba000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x4b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308bb000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x4c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308bc000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x4d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308bd000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x4e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308be000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x4f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308bf000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x50000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c0000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x51000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c1000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x52000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c2000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x53000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c3000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x54000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c4000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x55000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c5000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x56000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c6000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x57000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c7000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x58000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c8000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x59000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308c9000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x5a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ca000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x5b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308cb000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x5c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308cc000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x5d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308cd000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x5e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ce000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x5f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308cf000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x60000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d0000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x61000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d1000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x62000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d2000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x63000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d3000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x64000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d4000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x65000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d5000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x66000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d6000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x67000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d7000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x68000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d8000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x69000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308d9000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x6a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308da000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x6b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308db000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x6c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308dc000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x6d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308dd000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x6e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308de000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x6f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308df000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x70000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e0000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x71000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e1000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x72000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e2000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x73000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e3000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x74000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e4000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x75000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e5000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x76000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e6000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x77000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e7000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x78000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e8000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x79000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308e9000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x7a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ea000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x7b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308eb000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x7c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ec000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x7d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ed000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x7e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ee000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x7f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ef000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x80000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f0000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x81000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f1000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x82000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f2000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x83000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f3000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x84000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f4000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x85000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f5000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x86000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f6000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x87000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f7000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x88000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f8000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x89000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308f9000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x8a000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fa000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x8b000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fb000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x8c000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fc000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x8d000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fd000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x8e000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308fe000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x8f000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
+    {
+        .paddr = 0x308ff000,
+        /* contains GICR_PPTR */
+        .pptr = 0xffffffffffe00000ul + 0x90000,
+        .armExecuteNever = true,
+        .userAvailable = false
+    },
 };
 
 /* Elements in kernel_device_frames may be enabled in specific configurations
@@ -2871,13 +3543,13 @@ static const kernel_frame_t __attribute__((__section__(".boot.rodata"))) kernel_
 static const p_region_t __attribute__((__section__(".boot.rodata"))) avail_p_regs[] = {
     /* /memory@b0000000 */
     {
-        .start = 0xc0000000,
+        .start = 0xb0000000,
         .end = 0xde000000
     },
     /* /memory@b0000000 */
     {
         .start = 0xde420000,
-        .end = 0xf0000000
+        .end = 0xe0000000
     },
 };
 # 8 "/home/b/test/sel4test/kernel/include/plat/default/plat/machine.h" 2
@@ -11277,7 +11949,39 @@ void init_kernel(
     uint32_t dtb_size
 );
 # 16 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c" 2
-# 40 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
+# 26 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
+# 1 "/home/b/test/sel4test/kernel/include/shared_memory.h" 1
+/*
+
+ * Copyright 2024, seL4 Project
+
+ *
+
+ * SPDX-License-Identifier: GPL-2.0-only
+
+ */
+# 7 "/home/b/test/sel4test/kernel/include/shared_memory.h"
+       
+
+
+
+
+// 初始化共享内存 (内核启动时调用)
+void init_shared_memory_kernel(void);
+
+// 获取共享内存状态 (供内核其他模块调用)
+void get_shared_memory_status(void);
+
+// 简单的消息收发测试 (供内核模块调用)
+void test_shared_memory_communication(void);
+
+// 轮询检查共享内存消息 (定期调用)
+void poll_shared_memory_messages(void);
+
+// 内核级HyperAMP消息服务器主循环
+void hyperamp_server_main_loop(int max_messages);
+# 27 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c" 2
+# 41 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
 __attribute__((__section__(".boot.bss"))) static region_t reserved[(3 + 0)];
 
 __attribute__((__section__(".boot.text"))) static bool_t arch_init_freemem(p_region_t ui_p_reg,
@@ -11365,11 +12069,11 @@ __attribute__((__section__(".boot.text"))) static void init_irqs(cap_t root_cnod
         setIRQState(IRQInactive, (i));
     }
     setIRQState(IRQTimer, (27));
-# 152 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
+# 153 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
     /* provide the IRQ control cap */
     write_slot((((slot_ptr_t)(((pptr_t)cap_get_capPtr(root_cnode_cap)))) + (seL4_CapIRQControl)), cap_irq_control_cap_new());
 }
-# 175 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
+# 176 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
 /** This and only this function initialises the CPU.
  *
  * It does NOT initialise any kernel state.
@@ -11404,7 +12108,7 @@ __attribute__((__section__(".boot.text"))) static bool_t init_cpu(void)
      * On ARM SMP, the array index here is the CPU ID
      */
     word_t stack_top = ((word_t) kernel_stack_alloc[0lu]) + (1ul << (12));
-# 218 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
+# 219 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
     setKernelStack(stack_top);
 
 
@@ -11454,7 +12158,7 @@ __attribute__((__section__(".boot.text"))) static void init_plat(void)
 
 
 }
-# 332 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
+# 333 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
 /* Main kernel initialisation function. */
 
 static __attribute__((__section__(".boot.text"))) bool_t try_init_kernel(
@@ -11572,7 +12276,7 @@ static __attribute__((__section__(".boot.text"))) bool_t try_init_kernel(
 
     /* initialise the IRQ states and provide the IRQ control cap */
     init_irqs(root_cnode_cap);
-# 458 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
+# 459 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
     populate_bi_frame(0, 1, ipcbuf_vptr, extra_bi_size);
 
     /* put DTB in the bootinfo block, if present. */
@@ -11745,7 +12449,16 @@ static __attribute__((__section__(".boot.text"))) bool_t try_init_kernel(
 
     printf("Booting all finished, dropped to user space\n");
 
-    /* kernel successfully initialized */
+    /* 初始化共享内存通信 */
+    init_shared_memory_kernel();
+
+    /* 测试共享内存通信功能 */
+    get_shared_memory_status();
+    test_shared_memory_communication();
+    /* 启动HyperAMP消息服务器 - 等待Root Linux消息 */
+    printf("Starting HyperAMP message server...\n");
+    hyperamp_server_main_loop(10); // 处理最多10条消息
+
     return true;
 }
 
@@ -11759,7 +12472,7 @@ __attribute__((__section__(".boot.text"))) __attribute__((externally_visible)) v
 )
 {
     bool_t result;
-# 658 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
+# 668 "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c"
     result = try_init_kernel(ui_p_reg_start,
                              ui_p_reg_end,
                              pv_offset,
@@ -11769,7 +12482,7 @@ __attribute__((__section__(".boot.text"))) __attribute__((externally_visible)) v
 
 
     if (!result) {
-        _fail("ERROR: kernel init failed", "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c", 667, __func__);
+        _fail("ERROR: kernel init failed", "/home/b/test/sel4test/kernel/src/arch/arm/kernel/boot.c", 677, __func__);
         __builtin_unreachable();
     }
 
@@ -21561,6 +22274,564 @@ exception_t invokeUntyped_Retype(cte_t *srcSlot,
                      retypeBase, userSize, deviceMemory);
 
     return EXCEPTION_NONE;
+}
+# 1 "/home/b/test/sel4test/kernel/src/shared_memory.c"
+/*
+
+ * Copyright 2024, seL4 Project
+
+ *
+
+ * SPDX-License-Identifier: GPL-2.0-only
+
+ */
+# 19 "/home/b/test/sel4test/kernel/src/shared_memory.c"
+// 共享内存物理地址定义 (与hvisor配置一致)
+
+
+
+
+
+
+// 消息队列初始化标记
+
+
+
+// 消息处理状态
+
+
+
+// 服务处理结果
+
+
+
+// AMP消息队列结构
+struct AmpMsgQueue {
+    unsigned int working_mark;
+    unsigned short buf_size;
+    unsigned short empty_h;
+    unsigned short wait_h;
+    unsigned short proc_ing_h;
+};
+
+// 消息标志结构
+struct MsgFlag {
+    unsigned char deal_state; // 处理状态
+    unsigned char service_result; // 服务结果
+};
+
+// 消息结构
+struct Msg {
+    unsigned int service_id; // 服务ID
+    unsigned int offset; // 数据在共享缓冲区中的偏移
+    unsigned int length; // 数据长度
+    struct MsgFlag flag; // 消息标志
+};
+
+// 消息实体结构
+struct MsgEntry {
+    struct Msg msg;
+    unsigned short nxt_idx; // 下一个消息的索引
+};
+
+// 内核中的虚拟地址映射 (通过内核页表直接访问物理内存)
+static volatile char *g_data_vaddr = ((void *)0);
+static volatile struct AmpMsgQueue *g_root_q_vaddr = ((void *)0);
+static volatile struct AmpMsgQueue *g_sel4_q_vaddr = ((void *)0);
+
+// 轮询状态控制
+static int g_polling_enabled = 0;
+static int g_message_count = 0;
+static int g_server_running = 0;
+
+// 内核级消息服务器状态
+static int g_check_counter = 0;
+static int g_wait_timeout_ms = 100; // 轮询间隔
+
+// 简单的加密服务实现 (XOR加密)
+static int hyperamp_encrypt_service(char *data, int data_len, int buf_size)
+{
+    if (!data || data_len <= 0 || buf_size <= data_len) {
+        return -1;
+    }
+
+    // 简单的XOR加密，密钥为0x5A
+    for (int i = 0; i < data_len; i++) {
+        data[i] ^= 0x5A;
+    }
+
+    return 0;
+}
+
+// 简单的解密服务实现 (XOR解密)
+static int hyperamp_decrypt_service(char *data, int data_len, int buf_size)
+{
+    // XOR加密是对称的，所以解密和加密使用相同的操作
+    return hyperamp_encrypt_service(data, data_len, buf_size);
+}
+
+// 初始化Root Linux队列 (帮助Root Linux设置队列)
+static void init_root_linux_queue(void)
+{
+    if (!g_root_q_vaddr) {
+        printf("[kernel] Root queue not available for initialization\n");
+        return;
+    }
+
+    printf("[kernel] Initializing Root Linux message queue...\n");
+
+    // 检查当前状态
+    printf("[kernel] Before init - Root Linux queue status:\n");
+    printf("[kernel]   working_mark: 0x%x\n", g_root_q_vaddr->working_mark);
+    printf("[kernel]   buf_size: %u\n", g_root_q_vaddr->buf_size);
+    printf("[kernel]   empty_h: %u, wait_h: %u, proc_ing_h: %u\n",
+           g_root_q_vaddr->empty_h, g_root_q_vaddr->wait_h, g_root_q_vaddr->proc_ing_h);
+
+    // 如果Root Linux队列还没有初始化，我们帮它初始化
+    if (g_root_q_vaddr->working_mark != (0xEEEEEEEEU)) {
+        printf("[kernel] Root Linux queue not initialized, initializing it...\n");
+        g_root_q_vaddr->working_mark = (0x11111111U); // 设置为空闲状态
+        g_root_q_vaddr->buf_size = 16; // 支持16个消息
+        g_root_q_vaddr->empty_h = 0;
+        g_root_q_vaddr->wait_h = 0;
+        g_root_q_vaddr->proc_ing_h = 0;
+
+        printf("[kernel] Root Linux queue initialized by seL4 kernel\n");
+    }
+
+    printf("[kernel] After init - Root Linux queue status:\n");
+    printf("[kernel]   working_mark: 0x%x\n", g_root_q_vaddr->working_mark);
+    printf("[kernel]   buf_size: %u\n", g_root_q_vaddr->buf_size);
+    printf("[kernel]   empty_h: %u, wait_h: %u, proc_ing_h: %u\n",
+           g_root_q_vaddr->empty_h, g_root_q_vaddr->wait_h, g_root_q_vaddr->proc_ing_h);
+}
+
+// 内核级HyperAMP消息服务器主循环
+void hyperamp_server_main_loop(int max_messages)
+{
+    if (!g_polling_enabled || !g_root_q_vaddr || !g_data_vaddr) {
+        printf("[kernel] HyperAMP server cannot start - shared memory not ready\n");
+        return;
+    }
+
+    printf("\n[kernel] === Starting HyperAMP Message Server ===\n");
+    printf("[kernel] Waiting for messages from Root Linux...\n");
+    printf("[kernel] Max messages to process: %d\n", max_messages);
+    printf("[kernel] Polling interval: %dms\n", g_wait_timeout_ms);
+
+    g_server_running = 1;
+    g_message_count = 0;
+    g_check_counter = 0;
+
+    // 帮助Root Linux初始化队列
+    init_root_linux_queue();
+
+    // 测试共享缓冲区访问
+    printf("[kernel] Testing shared buffer access...\n");
+    if (g_data_vaddr != ((void *)0)) {
+        // 读取第一个字节测试
+        volatile char first_byte = g_data_vaddr[0];
+        printf("[kernel] First byte read successful: 0x%02x\n", first_byte);
+
+        // 写入测试数据
+        const char* server_ready_msg = "seL4 HyperAMP Server Ready";
+        int msg_len = 0;
+        while (server_ready_msg[msg_len] != '\0' && msg_len < 63) {
+            msg_len++;
+        }
+        for (int i = 0; i < msg_len; i++) {
+            g_data_vaddr[i] = server_ready_msg[i];
+        }
+        g_data_vaddr[msg_len] = '\0';
+
+        printf("[kernel] Server ready message written to shared buffer\n");
+    }
+
+    // 计算消息实体数组的起始地址
+    volatile struct MsgEntry* root_msg_entries = (volatile struct MsgEntry*)((char*)g_root_q_vaddr + sizeof(struct AmpMsgQueue));
+    printf("[kernel] Root message entries start at: %p\n", (void*)root_msg_entries);
+
+    // 主消息处理循环
+    while (g_server_running && g_message_count < max_messages) {
+        int found_message = 0;
+
+        // 检查Root Linux队列中的消息
+        if (g_root_q_vaddr->proc_ing_h < g_root_q_vaddr->buf_size) {
+            printf("\n[kernel] *** PROCESSING MESSAGE FROM ROOT LINUX *** Message #%d\n", ++g_message_count);
+            found_message = 1;
+
+            // 获取当前消息
+            unsigned short head = g_root_q_vaddr->proc_ing_h;
+            volatile struct MsgEntry* msg_entry = &root_msg_entries[head];
+            volatile struct Msg* msg = &msg_entry->msg;
+
+            printf("[kernel]   Message Index: %u\n", head);
+            printf("[kernel]   Service ID: %u\n", msg->service_id);
+            printf("[kernel]   Offset: 0x%x\n", msg->offset);
+            printf("[kernel]   Length: %u\n", msg->length);
+            printf("[kernel]   Deal state: %u\n", msg->flag.deal_state);
+
+            // 处理消息数据
+            if (msg->length > 0 && msg->offset < 0x00400000UL /* 4MB */) {
+                volatile char* data_ptr = g_data_vaddr + msg->offset;
+
+                printf("[kernel]   Reading data from offset 0x%x, length %u\n", msg->offset, msg->length);
+
+                // 安全地显示接收到的数据
+                printf("[kernel]   *** DATA FROM ROOT LINUX: [");
+                for (int i = 0; i < msg->length && i < 32; i++) {
+                    char c = data_ptr[i];
+                    if (c >= 32 && c <= 126) {
+                        printf("%c", c);
+                    } else {
+                        printf("\\x%02x", (unsigned char)c);
+                    }
+                }
+                if (msg->length > 32) printf("...");
+                printf("] *** \n");
+
+                // 处理不同的HyperAMP服务
+                int service_result = (0);
+                int data_modified = 0;
+
+                switch (msg->service_id) {
+                    case 1: // 加密服务
+                        printf("[kernel]   [HyperAMP] Executing ENCRYPTION service\n");
+                        if (hyperamp_encrypt_service((char*)data_ptr, msg->length, 0x00400000UL /* 4MB */ - msg->offset) == 0) {
+                            printf("[kernel]   [HyperAMP] Encryption completed successfully\n");
+                            data_modified = 1;
+                        } else {
+                            printf("[kernel]   [HyperAMP] Encryption failed\n");
+                            service_result = (1);
+                        }
+                        break;
+
+                    case 2: // 解密服务
+                        printf("[kernel]   [HyperAMP] Executing DECRYPTION service\n");
+                        if (hyperamp_decrypt_service((char*)data_ptr, msg->length, 0x00400000UL /* 4MB */ - msg->offset) == 0) {
+                            printf("[kernel]   [HyperAMP] Decryption completed successfully\n");
+                            data_modified = 1;
+                        } else {
+                            printf("[kernel]   [HyperAMP] Decryption failed\n");
+                            service_result = (1);
+                        }
+                        break;
+
+                    case 66: // 测试服务 (Echo)
+                        printf("[kernel]   [HyperAMP] Executing ECHO test service\n");
+                        break;
+
+                    default:
+                        printf("[kernel]   [HyperAMP] Unknown service ID: %u, treating as echo\n", msg->service_id);
+                        break;
+                }
+
+                // 如果数据被修改，显示处理后的结果
+                if (data_modified) {
+                    printf("[kernel]   *** PROCESSED DATA: [");
+                    for (int i = 0; i < msg->length && i < 32; i++) {
+                        char c = data_ptr[i];
+                        if (c >= 32 && c <= 126) {
+                            printf("%c", c);
+                        } else {
+                            printf("\\x%02x", (unsigned char)c);
+                        }
+                    }
+                    if (msg->length > 32) printf("...");
+                    printf("] *** \n");
+                }
+
+                // 标记消息已处理
+                msg->flag.deal_state = (1);
+                msg->flag.service_result = service_result;
+
+                printf("[kernel]   Message marked as processed\n");
+            } else {
+                printf("[kernel]   Invalid message (length=%u, offset=0x%x)\n", msg->length, msg->offset);
+                msg->flag.deal_state = (1);
+                msg->flag.service_result = (1);
+            }
+
+            // 更新队列头
+            unsigned short old_head = g_root_q_vaddr->proc_ing_h;
+            unsigned short new_head = msg_entry->nxt_idx;
+            g_root_q_vaddr->proc_ing_h = new_head;
+            msg_entry->nxt_idx = g_root_q_vaddr->buf_size; // 标记为无效
+
+            // 重置工作状态，允许下一次通信
+            g_root_q_vaddr->working_mark = (0x11111111U);
+
+            printf("[kernel]   Updated Root Linux proc_ing_h: %u -> %u\n", old_head, new_head);
+            printf("[kernel]   Reset working_mark to IDLE (0x%x)\n", (0x11111111U));
+            printf("[kernel]   *** HYPERAMP SERVICE COMPLETED! ***\n");
+            printf("[kernel]   Root Linux should now detect completion and read processed data\n");
+        }
+
+        // 如果没有找到消息，定期显示等待状态
+        if (!found_message) {
+            g_check_counter++;
+            if (g_check_counter % 50 == 0) { // 每5秒显示一次状态
+                printf("[kernel] Waiting... (Check #%d, Root queue proc_ing_h=%u, buf_size=%u)\n",
+                       g_check_counter, g_root_q_vaddr->proc_ing_h, g_root_q_vaddr->buf_size);
+            }
+        }
+
+        // 简单的延时机制 (在内核中我们使用循环代替sleep)
+        for (volatile int i = 0; i < 100000; i++) {
+            // 空循环实现延时，约100ms
+        }
+    }
+
+    g_server_running = 0;
+    printf("\n[kernel] === HyperAMP Message Server Stopped ===\n");
+    printf("[kernel] Total messages processed: %d\n", g_message_count);
+    printf("[kernel] Total polling checks: %d\n", g_check_counter);
+}
+
+// 初始化共享内存映射 (内核启动时调用)
+void init_shared_memory_kernel(void)
+{
+    printf("[kernel] Initializing shared memory communication\n");
+
+    // 在ARM64系统中，直接使用物理地址加上内核偏移
+    g_data_vaddr = (volatile char*)(0xDE000000UL + (0xffffff8000000000ul - 0x0ul));
+    g_root_q_vaddr = (volatile struct AmpMsgQueue*)(0xDE400000UL /* Root Linux队列 */ + (0xffffff8000000000ul - 0x0ul));
+    g_sel4_q_vaddr = (volatile struct AmpMsgQueue*)(0xDE410000UL /* seL4队列 */ + (0xffffff8000000000ul - 0x0ul));
+
+    printf("[kernel] Physical to kernel virtual mapping:\n");
+    printf("[kernel]   Data: 0x%lx -> %p\n", (unsigned long)0xDE000000UL, (void*)g_data_vaddr);
+    printf("[kernel]   Root Queue: 0x%lx -> %p\n", (unsigned long)0xDE400000UL /* Root Linux队列 */, (void*)g_root_q_vaddr);
+    printf("[kernel]   seL4 Queue: 0x%lx -> %p\n", (unsigned long)0xDE410000UL /* seL4队列 */, (void*)g_sel4_q_vaddr);
+
+    // 验证地址映射关系
+    printf("[kernel] Address mapping verification:\n");
+    printf("[kernel]   PPTR_BASE_OFFSET = 0x%lx\n", (unsigned long)(0xffffff8000000000ul - 0x0ul));
+    printf("[kernel]   Physical 0x%lx + Offset 0x%lx = Virtual %p\n",
+           (unsigned long)0xDE000000UL, (unsigned long)(0xffffff8000000000ul - 0x0ul), (void*)g_data_vaddr);
+    printf("[kernel] Root Linux writes to PHYSICAL 0x%lx, seL4 reads from VIRTUAL %p\n",
+           (unsigned long)0xDE000000UL, (void*)g_data_vaddr);
+    printf("[kernel] Both addresses point to THE SAME physical memory!\n");
+
+    if (g_data_vaddr && g_root_q_vaddr && g_sel4_q_vaddr) {
+        printf("[kernel] Shared memory mapped successfully\n");
+
+        // 初始化seL4队列
+        g_sel4_q_vaddr->working_mark = (0xEEEEEEEEU);
+        g_sel4_q_vaddr->buf_size = 16;
+        g_sel4_q_vaddr->empty_h = 0;
+        g_sel4_q_vaddr->wait_h = 0;
+        g_sel4_q_vaddr->proc_ing_h = 0;
+
+        // 在数据区写入测试消息
+        const char *test_msg = "seL4 kernel shared memory initialized!";
+        int msg_len = 0;
+        // 手动计算字符串长度，避免使用strlen
+        while (test_msg[msg_len] != '\0' && msg_len < 63) {
+            msg_len++;
+        }
+
+        for (int i = 0; i < msg_len; i++) {
+            g_data_vaddr[i] = test_msg[i];
+        }
+        g_data_vaddr[msg_len] = '\0';
+
+        printf("[kernel] Test message written: '%.32s'\n", (const char*)g_data_vaddr);
+        printf("[kernel] seL4 queue initialized with mark=0x%x\n", g_sel4_q_vaddr->working_mark);
+
+        // 启用轮询功能
+        g_polling_enabled = 1;
+        printf("[kernel] Polling for Root Linux messages enabled\n");
+        printf("[kernel] Shared memory communication ready!\n");
+    } else {
+        printf("[kernel] Failed to map shared memory regions\n");
+    }
+}
+
+// 处理来自Root Linux的消息
+static void process_root_linux_message(void)
+{
+    if (!g_root_q_vaddr || !g_data_vaddr) {
+        return;
+    }
+
+    // 检查Root Linux队列是否有消息
+    if (g_root_q_vaddr->proc_ing_h < g_root_q_vaddr->buf_size) {
+        printf("\n[kernel] *** MESSAGE FROM ROOT LINUX DETECTED *** Processing message #%d\n", ++g_message_count);
+
+        // 计算消息实体的起始地址
+        volatile struct MsgEntry* msg_entries = (volatile struct MsgEntry*)((char*)g_root_q_vaddr + sizeof(struct AmpMsgQueue));
+        volatile struct MsgEntry* msg_entry = &msg_entries[g_root_q_vaddr->proc_ing_h];
+        volatile struct Msg* msg = &msg_entry->msg;
+
+        printf("[kernel]   Service ID: %u\n", msg->service_id);
+        printf("[kernel]   Offset: 0x%x\n", msg->offset);
+        printf("[kernel]   Length: %u\n", msg->length);
+        printf("[kernel]   Deal state: %u\n", msg->flag.deal_state);
+
+        // 处理消息数据
+        if (msg->length > 0 && msg->offset < 0x00400000UL /* 4MB */) {
+            volatile char* data_ptr = g_data_vaddr + msg->offset;
+
+            printf("[kernel]   Reading data from offset 0x%x, length %u\n", msg->offset, msg->length);
+
+            // 显示接收到的数据 (安全地)
+            printf("[kernel]   *** DATA FROM ROOT LINUX: [");
+            for (int i = 0; i < msg->length && i < 32; i++) {
+                char c = data_ptr[i];
+                if (c >= 32 && c <= 126) {
+                    printf("%c", c);
+                } else {
+                    printf("\\x%02x", (unsigned char)c);
+                }
+            }
+            if (msg->length > 32) printf("...");
+            printf("] *** \n");
+
+            // 处理不同的服务
+            int service_result = (0);
+            int data_modified = 0;
+
+            switch (msg->service_id) {
+                case 1: // 加密服务
+                    printf("[kernel]   [HyperAMP] Executing ENCRYPTION service\n");
+                    if (hyperamp_encrypt_service((char*)data_ptr, msg->length, 0x00400000UL /* 4MB */ - msg->offset) == 0) {
+                        printf("[kernel]   [HyperAMP] Encryption completed successfully\n");
+                        data_modified = 1;
+                    } else {
+                        printf("[kernel]   [HyperAMP] Encryption failed\n");
+                        service_result = (1);
+                    }
+                    break;
+
+                case 2: // 解密服务
+                    printf("[kernel]   [HyperAMP] Executing DECRYPTION service\n");
+                    if (hyperamp_decrypt_service((char*)data_ptr, msg->length, 0x00400000UL /* 4MB */ - msg->offset) == 0) {
+                        printf("[kernel]   [HyperAMP] Decryption completed successfully\n");
+                        data_modified = 1;
+                    } else {
+                        printf("[kernel]   [HyperAMP] Decryption failed\n");
+                        service_result = (1);
+                    }
+                    break;
+
+                case 66: // 测试服务 (Echo)
+                    printf("[kernel]   [HyperAMP] Executing ECHO test service\n");
+                    break;
+
+                default:
+                    printf("[kernel]   [HyperAMP] Unknown service ID: %u, treating as echo\n", msg->service_id);
+                    break;
+            }
+
+            // 如果数据被修改，显示处理后的结果
+            if (data_modified) {
+                printf("[kernel]   *** PROCESSED DATA: [");
+                for (int i = 0; i < msg->length && i < 32; i++) {
+                    char c = data_ptr[i];
+                    if (c >= 32 && c <= 126) {
+                        printf("%c", c);
+                    } else {
+                        printf("\\x%02x", (unsigned char)c);
+                    }
+                }
+                if (msg->length > 32) printf("...");
+                printf("] *** \n");
+            }
+
+            // 标记消息已处理
+            msg->flag.deal_state = (1);
+            msg->flag.service_result = service_result;
+
+            printf("[kernel]   Message marked as processed\n");
+        } else {
+            printf("[kernel]   Invalid message (length=%u, offset=0x%x)\n", msg->length, msg->offset);
+            msg->flag.deal_state = (1);
+            msg->flag.service_result = (1);
+        }
+
+        // 更新队列头
+        unsigned short old_head = g_root_q_vaddr->proc_ing_h;
+        unsigned short new_head = msg_entry->nxt_idx;
+        g_root_q_vaddr->proc_ing_h = new_head;
+        msg_entry->nxt_idx = g_root_q_vaddr->buf_size; // 标记为无效
+
+        // 重置工作状态，允许下一次通信
+        g_root_q_vaddr->working_mark = (0x11111111U);
+
+        printf("[kernel]   Updated Root Linux proc_ing_h: %u -> %u\n", old_head, new_head);
+        printf("[kernel]   Reset working_mark to IDLE (0x%x)\n", (0x11111111U));
+        printf("[kernel]   *** HYPERAMP SERVICE COMPLETED! ***\n");
+    }
+}
+
+// 轮询检查共享内存消息 (定期调用)
+void poll_shared_memory_messages(void)
+{
+    if (!g_polling_enabled) {
+        return;
+    }
+
+    // 检查并处理来自Root Linux的消息
+    process_root_linux_message();
+}
+
+// 获取共享内存状态 (供内核其他模块调用)
+void get_shared_memory_status(void)
+{
+    if (!g_root_q_vaddr || !g_sel4_q_vaddr) {
+        printf("[kernel] Shared memory not initialized\n");
+        return;
+    }
+
+    printf("[kernel] === Shared Memory Status ===\n");
+    printf("[kernel] Root Linux queue:\n");
+    printf("[kernel]   working_mark = 0x%x\n", g_root_q_vaddr->working_mark);
+    printf("[kernel]   buf_size = %u\n", g_root_q_vaddr->buf_size);
+    printf("[kernel]   empty_h = %u\n", g_root_q_vaddr->empty_h);
+    printf("[kernel]   wait_h = %u\n", g_root_q_vaddr->wait_h);
+    printf("[kernel]   proc_ing_h = %u\n", g_root_q_vaddr->proc_ing_h);
+
+    printf("[kernel] seL4 queue:\n");
+    printf("[kernel]   working_mark = 0x%x\n", g_sel4_q_vaddr->working_mark);
+    printf("[kernel]   buf_size = %u\n", g_sel4_q_vaddr->buf_size);
+    printf("[kernel]   empty_h = %u\n", g_sel4_q_vaddr->empty_h);
+    printf("[kernel]   wait_h = %u\n", g_sel4_q_vaddr->wait_h);
+    printf("[kernel]   proc_ing_h = %u\n", g_sel4_q_vaddr->proc_ing_h);
+
+    // 显示数据区的前64字节
+    printf("[kernel] Data region content: '%.64s'\n", (const char*)g_data_vaddr);
+
+    printf("[kernel] Polling enabled: %s\n", g_polling_enabled ? "YES" : "NO");
+    printf("[kernel] Messages processed: %d\n", g_message_count);
+}
+
+// 简单的消息收发测试 (供内核模块调用)
+void test_shared_memory_communication(void)
+{
+    if (!g_data_vaddr || !g_sel4_q_vaddr) {
+        printf("[kernel] Shared memory not available for testing\n");
+        return;
+    }
+
+    printf("[kernel] Testing shared memory communication...\n");
+
+    // 向Root Linux发送测试消息
+    const char *test_msg = "Hello from seL4 kernel!";
+    int msg_len = 0;
+    // 手动计算字符串长度
+    while (test_msg[msg_len] != '\0' && msg_len < 63) {
+        msg_len++;
+    }
+
+    // 写入数据区的偏移64字节处 (避免与现有数据冲突)
+    for (int i = 0; i < msg_len; i++) {
+        g_data_vaddr[64 + i] = test_msg[i];
+    }
+    g_data_vaddr[64 + msg_len] = '\0';
+
+    printf("[kernel] Message sent to Root Linux: '%.32s'\n", test_msg);
+    printf("[kernel] HyperAMP server will handle incoming messages\n");
+    printf("[kernel] Shared memory communication test complete\n");
 }
 # 1 "/home/b/test/sel4test/kernel/src/smp/ipi.c"
 /*

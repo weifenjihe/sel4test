@@ -29,10 +29,10 @@ typedef struct phytium_timer {
     uint32_t freq;
 } phytium_timer_t;
 
-// Timer functions
+// Timer functions - HVISOR SAFE VERSION
 static inline uint64_t phytium_get_time(phytium_timer_t *timer)
 {
-    // Use ARM generic timer
+    // Use ARM generic timer virtual counter (safe to read in hypervisor)
     uint64_t time;
     asm volatile("mrs %0, cntvct_el0" : "=r" (time));
     return time;
@@ -41,6 +41,6 @@ static inline uint64_t phytium_get_time(phytium_timer_t *timer)
 static inline void phytium_init_timer(phytium_timer_t *timer)
 {
     timer->freq = TIMER_FREQUENCY;
-    // Enable timer
-    asm volatile("msr cntp_ctl_el0, %0" :: "r" (1));
+    // Skip timer control register access - causes capability fault in hvisor
+    // NOTE: Timer should still function for reading time without control access
 }

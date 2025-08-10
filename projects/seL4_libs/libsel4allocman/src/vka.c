@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+/* HVISOR COMPATIBILITY: Disable ZF logging to avoid MMIO issues */
+#include <utils/zf_log.h>
+#define ZF_LOG_LEVEL ZF_LOG_NONE
+
 #include <allocman/allocman.h>
 #include <allocman/util.h>
 #include <stdlib.h>

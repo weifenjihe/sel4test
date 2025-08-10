@@ -17,7 +17,6 @@
             &{/timer};
     };
 
-
     /* Reserve shared memory region for hypervisor communication */
     reserved-memory {
         #address-cells = <2>;
