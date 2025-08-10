@@ -808,13 +808,14 @@ Sel4RuntimeStaticTLS:STRING=16384
 //Allow user to override configuration settings
 Sel4testAllowSettingsOverride:BOOL=OFF
 
-//Enable tests that require a functioning cache
+//Application to build (sel4test-driver or hello-world)
+Sel4testApp:STRING=hello-world
+
 Sel4testHaveCache:BOOL=ON
 
 //Enable tests that require a timer driver
 Sel4testHaveTimer:BOOL=ON
 
-//Disable tests not suitable for simulation
 Sel4testSimulation:BOOL=OFF
 
 //Path to a file.
@@ -858,7 +859,16 @@ elfloader_SOURCE_DIR:STATIC=/home/b/test/sel4test/tools/seL4/elfloader-tool
 ethdrivers_LIB_DEPENDS:STATIC=general;platsupport;general;lwip_Config;general;picotcp_Config;general;-Wl,--undefined=tx2_ether_qos_ptr,--undefined=zynq7000_gem_ptr,--undefined=zynqmp_gem_ptr,--undefined=imx_fec_ptr,--undefined=odroidc2_ethernet_ptr;
 
 //Value Computed by CMake
-libcpio_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libcpio
+hello-world_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world
+
+//Value Computed by CMake
+hello-world_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+hello-world_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/sel4test/apps/hello-world
+
+//Value Computed by CMake
+libcpio_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libcpio
 
 //Value Computed by CMake
 libcpio_IS_TOP_LEVEL:STATIC=OFF
@@ -867,7 +877,7 @@ libcpio_IS_TOP_LEVEL:STATIC=OFF
 libcpio_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/libcpio
 
 //Value Computed by CMake
-libelf_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libelf
+libelf_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libelf
 
 //Value Computed by CMake
 libelf_IS_TOP_LEVEL:STATIC=OFF
@@ -876,7 +886,7 @@ libelf_IS_TOP_LEVEL:STATIC=OFF
 libelf_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/libelf
 
 //Value Computed by CMake
-libethdrivers_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libethdrivers
+libethdrivers_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libethdrivers
 
 //Value Computed by CMake
 libethdrivers_IS_TOP_LEVEL:STATIC=OFF
@@ -885,7 +895,7 @@ libethdrivers_IS_TOP_LEVEL:STATIC=OFF
 libethdrivers_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/libethdrivers
 
 //Value Computed by CMake
-libfdt_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libfdt
+libfdt_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libfdt
 
 //Value Computed by CMake
 libfdt_IS_TOP_LEVEL:STATIC=OFF
@@ -894,7 +904,7 @@ libfdt_IS_TOP_LEVEL:STATIC=OFF
 libfdt_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/libfdt
 
 //Value Computed by CMake
-liblwip_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/liblwip
+liblwip_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/liblwip
 
 //Value Computed by CMake
 liblwip_IS_TOP_LEVEL:STATIC=OFF
@@ -903,7 +913,7 @@ liblwip_IS_TOP_LEVEL:STATIC=OFF
 liblwip_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/liblwip
 
 //Value Computed by CMake
-libmuslc_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/musllibc
+libmuslc_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/musllibc
 
 //Value Computed by CMake
 libmuslc_IS_TOP_LEVEL:STATIC=OFF
@@ -912,7 +922,7 @@ libmuslc_IS_TOP_LEVEL:STATIC=OFF
 libmuslc_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/musllibc
 
 //Value Computed by CMake
-libpci_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libpci
+libpci_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libpci
 
 //Value Computed by CMake
 libpci_IS_TOP_LEVEL:STATIC=OFF
@@ -921,7 +931,7 @@ libpci_IS_TOP_LEVEL:STATIC=OFF
 libpci_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/libpci
 
 //Value Computed by CMake
-libpicotcp_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libpicotcp
+libpicotcp_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libpicotcp
 
 //Value Computed by CMake
 libpicotcp_IS_TOP_LEVEL:STATIC=OFF
@@ -930,7 +940,7 @@ libpicotcp_IS_TOP_LEVEL:STATIC=OFF
 libpicotcp_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/libpicotcp
 
 //Value Computed by CMake
-libplatsupport_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libplatsupport
+libplatsupport_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libplatsupport
 
 //Value Computed by CMake
 libplatsupport_IS_TOP_LEVEL:STATIC=OFF
@@ -939,7 +949,7 @@ libplatsupport_IS_TOP_LEVEL:STATIC=OFF
 libplatsupport_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/libplatsupport
 
 //Value Computed by CMake
-libsatadrivers_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libsatadrivers
+libsatadrivers_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libsatadrivers
 
 //Value Computed by CMake
 libsatadrivers_IS_TOP_LEVEL:STATIC=OFF
@@ -957,7 +967,7 @@ libsel4_IS_TOP_LEVEL:STATIC=OFF
 libsel4_SOURCE_DIR:STATIC=/home/b/test/sel4test/kernel/libsel4
 
 //Value Computed by CMake
-libsel4allocman_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4allocman
+libsel4allocman_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4allocman
 
 //Value Computed by CMake
 libsel4allocman_IS_TOP_LEVEL:STATIC=OFF
@@ -966,7 +976,7 @@ libsel4allocman_IS_TOP_LEVEL:STATIC=OFF
 libsel4allocman_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/seL4_libs/libsel4allocman
 
 //Value Computed by CMake
-libsel4bench_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4bench
+libsel4bench_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4bench
 
 //Value Computed by CMake
 libsel4bench_IS_TOP_LEVEL:STATIC=OFF
@@ -975,7 +985,7 @@ libsel4bench_IS_TOP_LEVEL:STATIC=OFF
 libsel4bench_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/seL4_libs/libsel4bench
 
 //Value Computed by CMake
-libsel4debug_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4debug
+libsel4debug_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4debug
 
 //Value Computed by CMake
 libsel4debug_IS_TOP_LEVEL:STATIC=OFF
@@ -1002,7 +1012,7 @@ libsel4keyboard_IS_TOP_LEVEL:STATIC=OFF
 libsel4keyboard_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/sel4_projects_libs/libsel4keyboard
 
 //Value Computed by CMake
-libsel4muslcsys_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4muslcsys
+libsel4muslcsys_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4muslcsys
 
 //Value Computed by CMake
 libsel4muslcsys_IS_TOP_LEVEL:STATIC=OFF
@@ -1020,7 +1030,7 @@ libsel4nanopb_IS_TOP_LEVEL:STATIC=OFF
 libsel4nanopb_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/sel4_projects_libs/libsel4nanopb
 
 //Value Computed by CMake
-libsel4platsupport_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4platsupport
+libsel4platsupport_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4platsupport
 
 //Value Computed by CMake
 libsel4platsupport_IS_TOP_LEVEL:STATIC=OFF
@@ -1038,7 +1048,7 @@ libsel4rpc_IS_TOP_LEVEL:STATIC=OFF
 libsel4rpc_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/sel4_projects_libs/libsel4rpc
 
 //Value Computed by CMake
-libsel4serialserver_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4serialserver
+libsel4serialserver_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4serialserver
 
 //Value Computed by CMake
 libsel4serialserver_IS_TOP_LEVEL:STATIC=OFF
@@ -1047,7 +1057,7 @@ libsel4serialserver_IS_TOP_LEVEL:STATIC=OFF
 libsel4serialserver_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/seL4_libs/libsel4serialserver
 
 //Value Computed by CMake
-libsel4simple-default_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4simple-default
+libsel4simple-default_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4simple-default
 
 //Value Computed by CMake
 libsel4simple-default_IS_TOP_LEVEL:STATIC=OFF
@@ -1056,7 +1066,7 @@ libsel4simple-default_IS_TOP_LEVEL:STATIC=OFF
 libsel4simple-default_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/seL4_libs/libsel4simple-default
 
 //Value Computed by CMake
-libsel4simple_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4simple
+libsel4simple_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4simple
 
 //Value Computed by CMake
 libsel4simple_IS_TOP_LEVEL:STATIC=OFF
@@ -1065,7 +1075,7 @@ libsel4simple_IS_TOP_LEVEL:STATIC=OFF
 libsel4simple_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/seL4_libs/libsel4simple
 
 //Value Computed by CMake
-libsel4test_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4test
+libsel4test_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4test
 
 //Value Computed by CMake
 libsel4test_IS_TOP_LEVEL:STATIC=OFF
@@ -1083,7 +1093,7 @@ libsel4testsupport_IS_TOP_LEVEL:STATIC=OFF
 libsel4testsupport_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/sel4test/libsel4testsupport
 
 //Value Computed by CMake
-libsel4utils_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4utils
+libsel4utils_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4utils
 
 //Value Computed by CMake
 libsel4utils_IS_TOP_LEVEL:STATIC=OFF
@@ -1101,7 +1111,7 @@ libsel4vchan_IS_TOP_LEVEL:STATIC=OFF
 libsel4vchan_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/sel4_projects_libs/libsel4vchan
 
 //Value Computed by CMake
-libsel4vka_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4vka
+libsel4vka_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4vka
 
 //Value Computed by CMake
 libsel4vka_IS_TOP_LEVEL:STATIC=OFF
@@ -1128,7 +1138,7 @@ libsel4vmmplatsupport_IS_TOP_LEVEL:STATIC=OFF
 libsel4vmmplatsupport_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/sel4_projects_libs/libsel4vmmplatsupport
 
 //Value Computed by CMake
-libsel4vspace_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4vspace
+libsel4vspace_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4vspace
 
 //Value Computed by CMake
 libsel4vspace_IS_TOP_LEVEL:STATIC=OFF
@@ -1137,7 +1147,7 @@ libsel4vspace_IS_TOP_LEVEL:STATIC=OFF
 libsel4vspace_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/seL4_libs/libsel4vspace
 
 //Value Computed by CMake
-libsel4ync_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/seL4_libs/libsel4sync
+libsel4ync_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/seL4_libs/libsel4sync
 
 //Value Computed by CMake
 libsel4ync_IS_TOP_LEVEL:STATIC=OFF
@@ -1146,7 +1156,7 @@ libsel4ync_IS_TOP_LEVEL:STATIC=OFF
 libsel4ync_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/seL4_libs/libsel4sync
 
 //Value Computed by CMake
-libutils_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libutils
+libutils_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libutils
 
 //Value Computed by CMake
 libutils_IS_TOP_LEVEL:STATIC=OFF
@@ -1155,7 +1165,7 @@ libutils_IS_TOP_LEVEL:STATIC=OFF
 libutils_SOURCE_DIR:STATIC=/home/b/test/sel4test/projects/util_libs/libutils
 
 //Value Computed by CMake
-libvirtio_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/util_libs/libvirtio
+libvirtio_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/util_libs/libvirtio
 
 //Value Computed by CMake
 libvirtio_IS_TOP_LEVEL:STATIC=OFF
@@ -1212,7 +1222,7 @@ sel4nanopb_LIB_DEPENDS:STATIC=general;utils;general;sel4;general;nanopb;
 sel4rpc_LIB_DEPENDS:STATIC=general;utils;general;sel4;general;sel4nanopb;general;sel4utils;general;sel4vka;general;nanopb;
 
 //Value Computed by CMake
-sel4runtime_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/sel4test-driver/sel4runtime
+sel4runtime_BINARY_DIR:STATIC=/home/b/test/sel4test/cbuild/apps/hello-world/sel4runtime
 
 //Value Computed by CMake
 sel4runtime_IS_TOP_LEVEL:STATIC=OFF
@@ -1388,7 +1398,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=44
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=33
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -1683,7 +1693,7 @@ KernelCtzNoBuiltin-ADVANCED:INTERNAL=1
 //Location of kernel DTB file
 KernelDTBPath:INTERNAL=/home/b/test/sel4test/cbuild/kernel/kernel.dtb
 //Size of DTB blob, in bytes
-KernelDTBSize:INTERNAL= 6345
+KernelDTBSize:INTERNAL= 5433
 //ADVANCED property for variable: KernelDangerousCodeInjection
 KernelDangerousCodeInjection-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: KernelDebugBuild
@@ -1911,8 +1921,6 @@ LibSel4UtilsProfile-ADVANCED:INTERNAL=1
 LibSel4UtilsStackSize-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: LibSel4VMDeferMemoryMap
 LibSel4VMDeferMemoryMap-ADVANCED:INTERNAL=1
-//ADVANCED property for variable: LibSel4VMMPlatsupportVESAFrameBuffer
-LibSel4VMMPlatsupportVESAFrameBuffer-ADVANCED:INTERNAL=1
 //Expose VESA Frame Buffer
 //\n        Support for mapping the VESA frame buffer frames into
 // the guest OS.
@@ -1921,13 +1929,9 @@ LibSel4VMMPlatsupportVESAFrameBuffer-ADVANCED:INTERNAL=1
 //\n        due to missing features or such.
 LibSel4VMMPlatsupportVESAFrameBuffer:INTERNAL=ON
 LibSel4VMMPlatsupportVESAFrameBuffer_DISABLED:INTERNAL=TRUE
-//ADVANCED property for variable: LibSel4VMMUseHPET
-LibSel4VMMUseHPET-ADVANCED:INTERNAL=1
 //Use the High Precision Event Timer (HPET)
 LibSel4VMMUseHPET:INTERNAL=OFF
 LibSel4VMMUseHPET_DISABLED:INTERNAL=TRUE
-//ADVANCED property for variable: LibSel4VMVMXTimerDebug
-LibSel4VMVMXTimerDebug-ADVANCED:INTERNAL=1
 //Use VMX Pre-Emption timer for debugging
 //\n    Will cause a regular vmexit to happen based on VMX pre-emption
 //\n    timer. At each exit the guest state will be printed out.
@@ -1937,8 +1941,6 @@ LibSel4VMVMXTimerDebug-ADVANCED:INTERNAL=1
 //\n    to appear to happen
 LibSel4VMVMXTimerDebug:INTERNAL=OFF
 LibSel4VMVMXTimerDebug_DISABLED:INTERNAL=TRUE
-//ADVANCED property for variable: LibSel4VMVMXTimerTimeout
-LibSel4VMVMXTimerTimeout-ADVANCED:INTERNAL=1
 LibSel4VMVMXTimerTimeout:INTERNAL=4000
 LibSel4VMVMXTimerTimeout_UNAVAILABLE:INTERNAL=ON
 //ADVANCED property for variable: LibUtilsDefaultZfLogLevel
@@ -1991,6 +1993,8 @@ SYSCALL_STUB_GEN_PATH-ADVANCED:INTERNAL=1
 Sel4RuntimeRootStack-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: Sel4RuntimeStaticTLS
 Sel4RuntimeStaticTLS-ADVANCED:INTERNAL=1
+//STRINGS property for variable: Sel4testApp
+Sel4testApp-STRINGS:INTERNAL=sel4test-driver;hello-world
 //ADVANCED property for variable: Sel4testHaveCache
 Sel4testHaveCache-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: Sel4testHaveTimer

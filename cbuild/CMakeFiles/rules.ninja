@@ -130,7 +130,7 @@ rule C_EXECUTABLE_LINKER__elfloader_Debug
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER__sel4test-driver_Debug
+rule C_COMPILER__hello-world_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -140,7 +140,7 @@ rule C_COMPILER__sel4test-driver_Debug
 #############################################
 # Rule for linking C executable.
 
-rule C_EXECUTABLE_LINKER__sel4test-driver_Debug
+rule C_EXECUTABLE_LINKER__hello-world_Debug
   command = $PRE_LINK && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild  $FLAGS $LINK_FLAGS /home/b/test/sel4test/cbuild/lib/crt0.o /home/b/test/sel4test/cbuild/lib/crti.o /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/../lib/gcc/aarch64-none-linux-gnu/10.3.1/crtbegin.o $in -Wl,--start-group         -lgcc -lgcc_eh $LINK_PATH $LINK_LIBRARIES -Wl,--end-group /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/../lib/gcc/aarch64-none-linux-gnu/10.3.1/crtend.o /home/b/test/sel4test/cbuild/lib/crtn.o -o $TARGET_FILE && $POST_BUILD
   description = Linking C executable $TARGET_FILE
   restat = $RESTAT
@@ -649,197 +649,6 @@ rule C_COMPILER__sel4bench_Debug
 rule C_STATIC_LIBRARY_LINKER__sel4bench_Debug
   command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
   description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__sel4vm_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER__sel4vm_Debug
-  command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__sel4vchan_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER__sel4vchan_Debug
-  command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__sel4dma_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER__sel4dma_Debug
-  command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__sel4vmmplatsupport_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER__sel4vmmplatsupport_Debug
-  command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__nanopb_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER__nanopb_Debug
-  command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__sel4nanopb_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER__sel4nanopb_Debug
-  command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__sel4rpc_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER__sel4rpc_Debug
-  command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__sel4testsupport_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER__sel4testsupport_Debug
-  command = $PRE_LINK && /usr/bin/ccache /usr/bin/cmake -E rm -f $TARGET_FILE && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ar qc $TARGET_FILE $LINK_FLAGS $in && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ranlib $TARGET_FILE && $POST_BUILD
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling ASM files.
-
-rule ASM_COMPILER__sel4test-tests_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building ASM object $out
-
-
-#############################################
-# Rule for compiling C files.
-
-rule C_COMPILER__sel4test-tests_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for compiling CXX files.
-
-rule CXX_COMPILER__sel4test-tests_Debug
-  depfile = $DEP_FILE
-  deps = gcc
-  command = /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-g++ --sysroot=/home/b/test/sel4test/cbuild $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building CXX object $out
-
-
-#############################################
-# Rule for linking CXX executable.
-
-rule CXX_EXECUTABLE_LINKER__sel4test-tests_Debug
-  command = $PRE_LINK && /usr/bin/ccache /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-g++ --sysroot=/home/b/test/sel4test/cbuild  $FLAGS $LINK_FLAGS /home/b/test/sel4test/cbuild/lib/crt0.o /home/b/test/sel4test/cbuild/lib/crti.o /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/../lib/gcc/aarch64-none-linux-gnu/10.3.1/crtbegin.o $in -Wl,--start-group         -lgcc -lgcc_eh $LINK_PATH $LINK_LIBRARIES -Wl,--end-group /home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/../lib/gcc/aarch64-none-linux-gnu/10.3.1/crtend.o /home/b/test/sel4test/cbuild/lib/crtn.o -o $TARGET_FILE && $POST_BUILD
-  description = Linking CXX executable $TARGET_FILE
   restat = $RESTAT
 
 

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec "${REALGCC:-/home/b/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc}" "$@" -specs "/home/b/test/sel4test/cbuild/apps/hello-world/musllibc/build-temp/stage/lib/musl-gcc.specs"

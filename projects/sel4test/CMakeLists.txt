@@ -28,7 +28,16 @@ if((NOT Sel4testAllowSettingsOverride) AND (KernelArchARM OR KernelArchRiscV))
 endif()
 elfloader_import_project()
 
-add_subdirectory(apps/sel4test-driver)
+# add_subdirectory(apps/sel4test-driver)
+# Allow choosing between different applications
+set(Sel4testApp "sel4test-driver" CACHE STRING "Application to build (sel4test-driver or hello-world)")
+set_property(CACHE Sel4testApp PROPERTY STRINGS sel4test-driver hello-world)
+
+if(Sel4testApp STREQUAL "hello-world")
+    add_subdirectory(apps/hello-world)
+else()
+    add_subdirectory(apps/sel4test-driver)
+endif()
 
 if(SIMULATION)
     include(simulation)

@@ -49,7 +49,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/b/test/sel4test/cbuild/apps/sel4test-driver/cmake_install.cmake")
+  include("/home/b/test/sel4test/cbuild/apps/hello-world/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
