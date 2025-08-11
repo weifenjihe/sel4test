@@ -1693,7 +1693,7 @@ KernelCtzNoBuiltin-ADVANCED:INTERNAL=1
 //Location of kernel DTB file
 KernelDTBPath:INTERNAL=/home/b/test/sel4test/cbuild/kernel/kernel.dtb
 //Size of DTB blob, in bytes
-KernelDTBSize:INTERNAL= 5666
+KernelDTBSize:INTERNAL= 5435
 //ADVANCED property for variable: KernelDangerousCodeInjection
 KernelDangerousCodeInjection-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: KernelDebugBuild

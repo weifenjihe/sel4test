@@ -12,16 +12,16 @@
     };
     
     /* Reserved memory for 32-bit mode */
-    reserved-memory {
-        #address-cells = <2>;
-        #size-cells = <2>;
-        ranges;
+    // reserved-memory {
+    //     #address-cells = <2>;
+    //     #size-cells = <2>;
+    //     ranges;
         
-        /* Shared memory region - must not be used by seL4 in 32-bit mode */
-        hvisor_shm_32: shm@de000000 {
-            compatible = "shared-dma-pool";
-            no-map;
-            reg = <0x00 0xde000000 0x00 0x420000>;
-        };
-    };
+    //     /* Shared memory region - must not be used by seL4 in 32-bit mode */
+    //     hvisor_shm_32: shm@de000000 {
+    //         compatible = "shared-dma-pool";
+    //         no-map;
+    //         reg = <0x00 0xde000000 0x00 0x420000>;
+    //     };
+    // };
 };

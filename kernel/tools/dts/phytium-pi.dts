@@ -360,15 +360,15 @@
 		device_type = "memory";
 		reg = <0x0 0xb0000000 0x00 0x30000000>;
 	};
-	reserved-memory {
-		#address-cells = <0x02>;
-		#size-cells = <0x02>;
-		ranges;
-    	shm@e0000000 {
-        	no-map;
-        	reg = <0x00 0xde000000 0x00 0x00420000>;
-    	};
-	};
+	// reserved-memory {
+	// 	#address-cells = <0x02>;
+	// 	#size-cells = <0x02>;
+	// 	ranges;
+    // 	shm@e0000000 {
+    //     	no-map;
+    //     	reg = <0x00 0xde000000 0x00 0x00420000>;
+    // 	};
+	// };
 	__symbols__ {
 		scmi = "/firmware/scmi";
 		scmi_dvfs = "/firmware/scmi/protocol@13";

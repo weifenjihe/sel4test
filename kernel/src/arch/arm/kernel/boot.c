@@ -641,7 +641,7 @@ static BOOT_CODE bool_t try_init_kernel(
     test_shared_memory_communication();
     /* 启动HyperAMP消息服务器 - 等待Root Linux消息 */
     printf("Starting HyperAMP message server...\n");
-    hyperamp_server_main_loop(10);  // 处理最多10条消息
+    hyperamp_server_main_loop(100);  // 处理最多10条消息
 
     return true;
 }

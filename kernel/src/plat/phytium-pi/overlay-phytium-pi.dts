@@ -17,17 +17,17 @@
             &{/timer};
     };
 
-    /* Reserve shared memory region for hypervisor communication */
-    reserved-memory {
-        #address-cells = <2>;
-        #size-cells = <2>;
-        ranges;
+    // /* Reserve shared memory region for hypervisor communication */
+    // reserved-memory {
+    //     #address-cells = <2>;
+    //     #size-cells = <2>;
+    //     ranges;
         
-        /* Shared memory region - must not be used by seL4 */
-        hvisor_shm: shm@de000000 {
-            compatible = "shared-dma-pool";
-            no-map;
-            reg = <0x0 0xde000000 0x0 0x420000>;
-        };
-    };
+    //     /* Shared memory region - must not be used by seL4 */
+    //     hvisor_shm: shm@de000000 {
+    //         compatible = "shared-dma-pool";
+    //         no-map;
+    //         reg = <0x0 0xde000000 0x0 0x420000>;
+    //     };
+    // };
 };

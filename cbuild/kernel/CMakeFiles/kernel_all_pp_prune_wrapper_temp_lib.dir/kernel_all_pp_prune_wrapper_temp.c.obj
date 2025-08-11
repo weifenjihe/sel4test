@@ -3544,11 +3544,6 @@ static const p_region_t __attribute__((__section__(".boot.rodata"))) avail_p_reg
     /* /memory@b0000000 */
     {
         .start = 0xb0000000,
-        .end = 0xde000000
-    },
-    /* /memory@b0000000 */
-    {
-        .start = 0xde420000,
         .end = 0xe0000000
     },
 };
@@ -12486,7 +12481,7 @@ static __attribute__((__section__(".boot.text"))) bool_t try_init_kernel(
     test_shared_memory_communication();
     /* 启动HyperAMP消息服务器 - 等待Root Linux消息 */
     printf("Starting HyperAMP message server...\n");
-    hyperamp_server_main_loop(10); // 处理最多10条消息
+    hyperamp_server_main_loop(100); // 处理最多10条消息
 
     return true;
 }
@@ -22377,6 +22372,41 @@ static int g_server_running = 0;
 static int g_check_counter = 0;
 static int g_wait_timeout_ms = 100; // 轮询间隔
 
+// !!!!! 新增：强制缓存同步函数，解决缓存一致性问题 !!!!!
+static void force_cache_sync_for_shared_memory(void)
+{
+    if (!g_data_vaddr || !g_root_q_vaddr || !g_sel4_q_vaddr) {
+        return;
+    }
+
+    // ARM64缓存管理：强制将所有共享内存数据写回主内存
+
+    // 1. 数据同步屏障
+    __asm__ volatile("dsb sy" : : : "memory");
+
+    // 2. 清理数据区域的缓存（按64字节缓存行）
+    unsigned long data_start = (unsigned long)g_data_vaddr;
+    for (unsigned long addr = data_start; addr < data_start + 0x00400000UL /* 4MB */; addr += 64) {
+        __asm__ volatile("dc civac, %0" : : "r" (addr) : "memory");
+    }
+
+    // 3. 清理Root队列缓存
+    unsigned long root_q_start = (unsigned long)g_root_q_vaddr;
+    for (unsigned long addr = root_q_start; addr < root_q_start + 0x1000UL; addr += 64) {
+        __asm__ volatile("dc civac, %0" : : "r" (addr) : "memory");
+    }
+
+    // 4. 清理seL4队列缓存
+    unsigned long sel4_q_start = (unsigned long)g_sel4_q_vaddr;
+    for (unsigned long addr = sel4_q_start; addr < sel4_q_start + 0x1000UL; addr += 64) {
+        __asm__ volatile("dc civac, %0" : : "r" (addr) : "memory");
+    }
+
+    // 5. 最终的内存屏障
+    __asm__ volatile("dsb sy" : : : "memory");
+    __asm__ volatile("isb" : : : "memory");
+}
+
 // 简单的加密服务实现 (XOR加密)
 static int hyperamp_encrypt_service(char *data, int data_len, int buf_size)
 {
@@ -22425,6 +22455,10 @@ static void init_root_linux_queue(void)
         g_root_q_vaddr->wait_h = 0;
         g_root_q_vaddr->proc_ing_h = 0;
 
+        // !!!!! 强制缓存同步，确保Root队列初始化对Root Linux可见 !!!!!
+        printf("[kernel] Forcing cache sync for Root queue initialization...\n");
+        force_cache_sync_for_shared_memory();
+
         printf("[kernel] Root Linux queue initialized by seL4 kernel\n");
     }
 
@@ -22434,7 +22468,46 @@ static void init_root_linux_queue(void)
     printf("[kernel]   empty_h: %u, wait_h: %u, proc_ing_h: %u\n",
            g_root_q_vaddr->empty_h, g_root_q_vaddr->wait_h, g_root_q_vaddr->proc_ing_h);
 }
+static void init_sel4_queue(void)
+{
+    if (!g_sel4_q_vaddr) {
+        printf("[kernel] sel4 not available for initialization\n");
+        return;
+    }
 
+    printf("[kernel] Initializing sel4 message queue...\n");
+
+    // 检查当前状态
+    printf("[kernel] Before init - sel4 queue status:\n");
+    printf("[kernel]   working_mark: 0x%x\n", g_sel4_q_vaddr->working_mark);
+    printf("[kernel]   buf_size: %u\n", g_sel4_q_vaddr->buf_size);
+    printf("[kernel]   empty_h: %u, wait_h: %u, proc_ing_h: %u\n",
+           g_sel4_q_vaddr->empty_h, g_sel4_q_vaddr->wait_h, g_sel4_q_vaddr->proc_ing_h);
+
+    // 如果seL4队列还没有初始化，我们初始化它
+    if (g_sel4_q_vaddr->working_mark != (0xEEEEEEEEU)) {
+        printf("[kernel] sel4 queue not initialized, initializing it...\n");
+        g_sel4_q_vaddr->working_mark = (0xEEEEEEEEU); // 设置为已初始化状态
+        g_sel4_q_vaddr->buf_size = 16; // 支持16个消息
+        g_sel4_q_vaddr->empty_h = 0;
+        g_sel4_q_vaddr->wait_h = 0;
+        g_sel4_q_vaddr->proc_ing_h = 0;
+
+        // !!!!! 强制缓存同步，确保seL4队列初始化对Root Linux可见 !!!!!
+        printf("[kernel] Forcing cache sync for seL4 queue initialization...\n");
+        force_cache_sync_for_shared_memory();
+
+        printf("[kernel] sel4 queue initialized by seL4 kernel\n");
+    } else {
+        printf("[kernel] sel4 queue already initialized\n");
+    }
+
+    printf("[kernel] After init - sel4 queue status:\n");
+    printf("[kernel]   working_mark: 0x%x\n", g_sel4_q_vaddr->working_mark);
+    printf("[kernel]   buf_size: %u\n", g_sel4_q_vaddr->buf_size);
+    printf("[kernel]   empty_h: %u, wait_h: %u, proc_ing_h: %u\n",
+           g_sel4_q_vaddr->empty_h, g_sel4_q_vaddr->wait_h, g_sel4_q_vaddr->proc_ing_h);
+}
 // 内核级HyperAMP消息服务器主循环
 void hyperamp_server_main_loop(int max_messages)
 {
@@ -22454,35 +22527,48 @@ void hyperamp_server_main_loop(int max_messages)
 
     // 帮助Root Linux初始化队列
     init_root_linux_queue();
-
+    init_sel4_queue();
     // 测试共享缓冲区访问
     printf("[kernel] Testing shared buffer access...\n");
-    if (g_data_vaddr != ((void *)0)) {
-        // 读取第一个字节测试
-        volatile char first_byte = g_data_vaddr[0];
-        printf("[kernel] First byte read successful: 0x%02x\n", first_byte);
+    // if (g_data_vaddr != NULL) {
+    //     // 读取第一个字节测试
+    //     volatile char first_byte = g_data_vaddr[0];
+    //     printf("[kernel] First byte read successful: 0x%02x\n", first_byte);
 
-        // 写入测试数据
-        const char* server_ready_msg = "seL4 HyperAMP Server Ready";
-        int msg_len = 0;
-        while (server_ready_msg[msg_len] != '\0' && msg_len < 63) {
-            msg_len++;
-        }
-        for (int i = 0; i < msg_len; i++) {
-            g_data_vaddr[i] = server_ready_msg[i];
-        }
-        g_data_vaddr[msg_len] = '\0';
+    //     // 写入测试数据
+    //     const char* server_ready_msg = "seL4 HyperAMP Server Ready";
+    //     int msg_len = 0;
+    //     while (server_ready_msg[msg_len] != '\0' && msg_len < 63) {
+    //         msg_len++;
+    //     }
+    //     for (int i = 0; i < msg_len; i++) {
+    //         g_data_vaddr[i] = server_ready_msg[i];
+    //     }
+    //     g_data_vaddr[msg_len] = '\0';
 
-        printf("[kernel] Server ready message written to shared buffer\n");
-    }
+    //     printf("[kernel] Server ready message written to shared buffer\n");
+    // }
 
     // 计算消息实体数组的起始地址
     volatile struct MsgEntry* root_msg_entries = (volatile struct MsgEntry*)((char*)g_root_q_vaddr + sizeof(struct AmpMsgQueue));
     printf("[kernel] Root message entries start at: %p\n", (void*)root_msg_entries);
 
     // 主消息处理循环
-    while (g_server_running && g_message_count < max_messages) {
+    while (g_server_running && g_message_count < 100) {
         int found_message = 0;
+
+        // !!!!! 修复：检查队列状态并处理无效队列头 !!!!!
+        // 如果proc_ing_h >= buf_size，说明队列已经处理完毕或出现错误，重置队列状态
+        if (g_root_q_vaddr->proc_ing_h >= g_root_q_vaddr->buf_size) {
+            if (g_check_counter % 10000 == 0) { // 每隔一段时间重置一次队列
+                printf("[kernel] Queue head invalid (proc_ing_h=%u >= buf_size=%u), resetting...\n",
+                       g_root_q_vaddr->proc_ing_h, g_root_q_vaddr->buf_size);
+                g_root_q_vaddr->proc_ing_h = 0; // 重置队列头
+                g_root_q_vaddr->working_mark = (0xBBBBBBBBU); // 重置工作状态
+                force_cache_sync_for_shared_memory(); // 确保更改可见
+                printf("[kernel] Queue reset completed, ready for new messages\n");
+            }
+        }
 
         // 检查Root Linux队列中的消息
         if (g_root_q_vaddr->proc_ing_h < g_root_q_vaddr->buf_size) {
@@ -22499,6 +22585,7 @@ void hyperamp_server_main_loop(int max_messages)
             printf("[kernel]   Offset: 0x%x\n", msg->offset);
             printf("[kernel]   Length: %u\n", msg->length);
             printf("[kernel]   Deal state: %u\n", msg->flag.deal_state);
+            printf("[kernel]   Next index: %u\n", msg_entry->nxt_idx);
 
             // 处理消息数据
             if (msg->length > 0 && msg->offset < 0x00400000UL /* 4MB */) {
@@ -22581,14 +22668,55 @@ void hyperamp_server_main_loop(int max_messages)
                 msg->flag.service_result = (1);
             }
 
-            // 更新队列头
+            // !!!!! 修复：智能队列头更新逻辑 !!!!!
             unsigned short old_head = g_root_q_vaddr->proc_ing_h;
-            unsigned short new_head = msg_entry->nxt_idx;
-            g_root_q_vaddr->proc_ing_h = new_head;
-            msg_entry->nxt_idx = g_root_q_vaddr->buf_size; // 标记为无效
+            unsigned short new_head;
+
+            // 检查nxt_idx是否有效
+            if (msg_entry->nxt_idx < g_root_q_vaddr->buf_size) {
+                // nxt_idx有效，使用它
+                new_head = msg_entry->nxt_idx;
+                printf("[kernel]   Using valid nxt_idx: %u -> %u\n", old_head, new_head);
+            } else {
+                // nxt_idx无效（可能是垃圾数据），采用简单的循环队列逻辑
+                new_head = (old_head + 1) % g_root_q_vaddr->buf_size;
+                printf("[kernel]   nxt_idx invalid (%u), using circular logic: %u -> %u\n",
+                       msg_entry->nxt_idx, old_head, new_head);
+            }
+
+            // 检查是否处理了有效消息
+            if (msg->length > 0 && msg->offset < 0x00400000UL /* 4MB */) {
+                // 有效消息，正常更新队列头
+                g_root_q_vaddr->proc_ing_h = new_head;
+                printf("[kernel]   Valid message processed, updated proc_ing_h to %u\n", new_head);
+            } else {
+                // 无效消息，检查是否已经处理了太多无效消息
+                static int invalid_msg_count = 0;
+                invalid_msg_count++;
+
+                if (invalid_msg_count >= 16) {
+                    // 处理了太多无效消息，重置队列等待Root Linux写入新数据
+                    printf("[kernel]   Too many invalid messages (%d), resetting queue for fresh data\n", invalid_msg_count);
+                    g_root_q_vaddr->proc_ing_h = 0;
+                    g_root_q_vaddr->working_mark = (0xBBBBBBBBU);
+                    invalid_msg_count = 0; // 重置计数器
+                } else {
+                    // 继续处理下一个消息
+                    g_root_q_vaddr->proc_ing_h = new_head;
+                    printf("[kernel]   Invalid message #%d, trying next: proc_ing_h = %u\n",
+                           invalid_msg_count, new_head);
+                }
+            }
+
+            // 标记当前消息槽为无效（防止重复处理）
+            msg_entry->nxt_idx = g_root_q_vaddr->buf_size;
 
             // 重置工作状态，允许下一次通信
             g_root_q_vaddr->working_mark = (0xBBBBBBBBU);
+
+            // !!!!! 强制缓存同步，确保消息处理结果对Root Linux可见 !!!!!
+            printf("[kernel] Forcing cache sync after message processing...\n");
+            force_cache_sync_for_shared_memory();
 
             printf("[kernel]   Updated Root Linux proc_ing_h: %u -> %u\n", old_head, new_head);
             printf("[kernel]   Reset working_mark to IDLE (0x%x)\n", (0xBBBBBBBBU));
@@ -22599,9 +22727,13 @@ void hyperamp_server_main_loop(int max_messages)
         // 如果没有找到消息，定期显示等待状态
         if (!found_message) {
             g_check_counter++;
-            if (g_check_counter % 500 == 0) { // 每5秒显示一次状态
-                printf("[kernel] Waiting... (Check #%d, Root queue proc_ing_h=%u, buf_size=%u)\n",
-                       g_check_counter, g_root_q_vaddr->proc_ing_h, g_root_q_vaddr->buf_size);
+            if (g_check_counter % 1000 == 0) { // 每1000次检查显示一次状态（约100秒）
+                printf("[kernel] Waiting... (Check #%d, Root queue proc_ing_h=%u, buf_size=%u, working_mark=0x%x)\n",
+                       g_check_counter, g_root_q_vaddr->proc_ing_h, g_root_q_vaddr->buf_size, g_root_q_vaddr->working_mark);
+
+                // 显示当前队列状态的详细信息
+                printf("[kernel] Queue details: empty_h=%u, wait_h=%u, proc_ing_h=%u\n",
+                       g_root_q_vaddr->empty_h, g_root_q_vaddr->wait_h, g_root_q_vaddr->proc_ing_h);
             }
         }
 
@@ -22622,58 +22754,194 @@ void init_shared_memory_kernel(void)
 {
     printf("[kernel] Initializing shared memory communication\n");
 
-    // 在ARM64系统中，直接使用物理地址加上内核偏移
+    // !!!!! 关键问题：PPTR_BASE_OFFSET映射可能不适用于hvisor共享内存 !!!!!
+    // hvisor的共享内存可能需要特殊的映射方式
+    printf("[kernel] *** DEBUGGING MEMORY MAPPING ISSUE ***\n");
+
+    printf("[kernel] Available physical memory range: [0xb0000000..0xe0000000)\n");
+    printf("[kernel] Shared memory regions:\n");
+    printf("[kernel]   Data: 0x%lx\n", (unsigned long)0xDE000000UL);
+    printf("[kernel]   Root Queue: 0x%lx\n", (unsigned long)0xDE400000UL /* Root Linux队列 */);
+    printf("[kernel]   seL4 Queue: 0x%lx\n", (unsigned long)0xDE410000UL /* seL4队列 */);
+
+    // 首先尝试直接使用内核线性映射
+    printf("[kernel] Attempting kernel linear mapping (PPTR_BASE_OFFSET + paddr)...\n");
+
+    // 计算虚拟地址
     g_data_vaddr = (volatile char*)(0xDE000000UL + (0xffffff8000000000ul - 0x0ul));
     g_root_q_vaddr = (volatile struct AmpMsgQueue*)(0xDE400000UL /* Root Linux队列 */ + (0xffffff8000000000ul - 0x0ul));
     g_sel4_q_vaddr = (volatile struct AmpMsgQueue*)(0xDE410000UL /* seL4队列 */ + (0xffffff8000000000ul - 0x0ul));
 
-    printf("[kernel] Physical to kernel virtual mapping:\n");
-    printf("[kernel]   Data: 0x%lx -> %p\n", (unsigned long)0xDE000000UL, (void*)g_data_vaddr);
-    printf("[kernel]   Root Queue: 0x%lx -> %p\n", (unsigned long)0xDE400000UL /* Root Linux队列 */, (void*)g_root_q_vaddr);
-    printf("[kernel]   seL4 Queue: 0x%lx -> %p\n", (unsigned long)0xDE410000UL /* seL4队列 */, (void*)g_sel4_q_vaddr);
-
-    // 验证地址映射关系
-    printf("[kernel] Address mapping verification:\n");
+    printf("[kernel] Calculated virtual addresses:\n");
     printf("[kernel]   PPTR_BASE_OFFSET = 0x%lx\n", (unsigned long)(0xffffff8000000000ul - 0x0ul));
-    printf("[kernel]   Physical 0x%lx + Offset 0x%lx = Virtual %p\n",
-           (unsigned long)0xDE000000UL, (unsigned long)(0xffffff8000000000ul - 0x0ul), (void*)g_data_vaddr);
-    printf("[kernel] Root Linux writes to PHYSICAL 0x%lx, seL4 reads from VIRTUAL %p\n",
-           (unsigned long)0xDE000000UL, (void*)g_data_vaddr);
-    printf("[kernel] Both addresses point to THE SAME physical memory!\n");
+    printf("[kernel]   Data vaddr: %p\n", (void*)g_data_vaddr);
+    printf("[kernel]   Root Queue vaddr: %p\n", (void*)g_root_q_vaddr);
+    printf("[kernel]   seL4 Queue vaddr: %p\n", (void*)g_sel4_q_vaddr);
 
-    if (g_data_vaddr && g_root_q_vaddr && g_sel4_q_vaddr) {
-        printf("[kernel] Shared memory mapped successfully\n");
+    // // !!!!! 重要测试：验证虚拟地址是否真的映射到正确的物理地址 !!!!!
+    // printf("[kernel] *** CRITICAL TEST: Verifying virtual-to-physical mapping ***\n");
 
-        // 初始化seL4队列
-        g_sel4_q_vaddr->working_mark = (0xEEEEEEEEU);
-        g_sel4_q_vaddr->buf_size = 16;
-        g_sel4_q_vaddr->empty_h = 0;
-        g_sel4_q_vaddr->wait_h = 0;
-        g_sel4_q_vaddr->proc_ing_h = 0;
+    // // 测试1: 写入不同的测试值到每个区域，看是否能从Root Linux端读到
+    // printf("[kernel] Test 1: Writing distinctive test patterns...\n");
 
-        // 在数据区写入测试消息
-        const char *test_msg = "seL4 kernel shared memory initialized!";
-        int msg_len = 0;
-        // 手动计算字符串长度，避免使用strlen
-        while (test_msg[msg_len] != '\0' && msg_len < 63) {
-            msg_len++;
-        }
+    // // 写入到seL4队列区域
+    // volatile unsigned int *sel4_test_ptr = (volatile unsigned int*)g_sel4_q_vaddr;
+    // printf("[kernel] Writing 0xDEADBEEF to seL4 queue virtual address %p...\n", (void*)sel4_test_ptr);
+    // sel4_test_ptr[0] = 0xDEADBEEF;
 
-        for (int i = 0; i < msg_len; i++) {
-            g_data_vaddr[i] = test_msg[i];
-        }
-        g_data_vaddr[msg_len] = '\0';
+    // // 立即读回验证内核端能否读到
+    // unsigned int readback_sel4 = sel4_test_ptr[0];
+    // printf("[kernel] seL4 queue readback from kernel: 0x%x %s\n", readback_sel4, 
+    //        (readback_sel4 == 0xDEADBEEF) ? "[OK]" : "[FAILED]");
 
-        printf("[kernel] Test message written: '%.32s'\n", (const char*)g_data_vaddr);
-        printf("[kernel] seL4 queue initialized with mark=0x%x\n", g_sel4_q_vaddr->working_mark);
+    // // 写入到Root队列区域
+    // volatile unsigned int *root_test_ptr = (volatile unsigned int*)g_root_q_vaddr;
+    // printf("[kernel] Writing 0xCAFEBABE to Root queue virtual address %p...\n", (void*)root_test_ptr);
+    // root_test_ptr[0] = 0xCAFEBABE;
 
-        // 启用轮询功能
-        g_polling_enabled = 1;
-        printf("[kernel] Polling for Root Linux messages enabled\n");
-        printf("[kernel] Shared memory communication ready!\n");
-    } else {
-        printf("[kernel] Failed to map shared memory regions\n");
-    }
+    // // 立即读回验证
+    // unsigned int readback_root = root_test_ptr[0];
+    // printf("[kernel] Root queue readback from kernel: 0x%x %s\n", readback_root,
+    //        (readback_root == 0xCAFEBABE) ? "[OK]" : "[FAILED]");
+
+    // 写入到数据区域
+    // printf("[kernel] Writing test string to data region virtual address %p...\n", (void*)g_data_vaddr);
+    // const char* test_pattern = "seL4_TEST_PATTERN_12345";
+    // int pattern_len = 0;
+    // while (test_pattern[pattern_len] != '\0' && pattern_len < 63) {
+    //     pattern_len++;
+    // }
+    // for (int i = 0; i < pattern_len; i++) {
+    //     g_data_vaddr[i] = test_pattern[i];
+    // }
+    // g_data_vaddr[pattern_len] = '\0';
+
+    // // 读回验证
+    // char readback_data[64];
+    // for (int i = 0; i < pattern_len && i < 63; i++) {
+    //     readback_data[i] = g_data_vaddr[i];
+    // }
+    // readback_data[pattern_len] = '\0';
+    // printf("[kernel] Data region readback from kernel: '%.32s' %s\n", readback_data,
+    //        (readback_data[0] == 's' && readback_data[1] == 'e') ? "[OK]" : "[FAILED]");
+
+    // // !!!!! 关键诊断信息 !!!!!
+    // printf("[kernel] *** IMPORTANT: Check if Root Linux can see these values: ***\n");
+    // printf("[kernel] Root Linux should read from physical 0x%lx and see: 0xCAFEBABE\n", 
+    //        (unsigned long)SHM_PADDR_ROOT_Q);
+    // printf("[kernel] Root Linux should read from physical 0x%lx and see: 0xDEADBEEF\n", 
+    //        (unsigned long)SHM_PADDR_SEL4_Q);
+    // printf("[kernel] Root Linux should read from physical 0x%lx and see: '%s'\n", 
+    //        (unsigned long)SHM_PADDR_DATA, test_pattern);
+
+    // !!!!! CRITICAL: 强制缓存同步以解决缓存一致性问题 !!!!!
+    // printf("[kernel] *** CRITICAL: Forcing cache synchronization for shared memory ***\n");
+
+    // // ARM64缓存管理：强制将缓存数据写回主内存并使缓存无效
+    // // 这确保seL4写入的数据能被Root Linux看到
+    // printf("[kernel] Executing cache maintenance operations...\n");
+
+    // // 使用内联汇编进行缓存管理
+    // // DSB (Data Synchronization Barrier) - 确保所有数据操作完成
+    // asm volatile("dsb sy" : : : "memory");
+    // printf("[kernel] DSB (Data Synchronization Barrier) executed\n");
+
+    // // ISB (Instruction Synchronization Barrier) - 确保指令流同步
+    // asm volatile("isb" : : : "memory");
+    // printf("[kernel] ISB (Instruction Synchronization Barrier) executed\n");
+
+    // // 对于每个共享内存区域，执行缓存清理操作
+    // printf("[kernel] Cleaning cache lines for shared memory regions...\n");
+
+    // // 清理数据区域的缓存 (4MB)
+    // unsigned long data_start = (unsigned long)g_data_vaddr;
+    // unsigned long data_end = data_start + SHM_SIZE_DATA;
+    // printf("[kernel] Cleaning data region cache: 0x%lx - 0x%lx\n", data_start, data_end);
+
+    // // 按缓存行大小（通常64字节）清理
+    // for (unsigned long addr = data_start; addr < data_end; addr += 64) {
+    //     asm volatile("dc civac, %0" : : "r" (addr) : "memory");
+    // }
+
+    // // 清理Root队列区域的缓存 (4KB)
+    // unsigned long root_q_start = (unsigned long)g_root_q_vaddr;
+    // unsigned long root_q_end = root_q_start + SHM_PAGE_SIZE;
+    // printf("[kernel] Cleaning root queue cache: 0x%lx - 0x%lx\n", root_q_start, root_q_end);
+
+    // for (unsigned long addr = root_q_start; addr < root_q_end; addr += 64) {
+    //     asm volatile("dc civac, %0" : : "r" (addr) : "memory");
+    // }
+
+    // // 清理seL4队列区域的缓存 (4KB)
+    // unsigned long sel4_q_start = (unsigned long)g_sel4_q_vaddr;
+    // unsigned long sel4_q_end = sel4_q_start + SHM_PAGE_SIZE;
+    // printf("[kernel] Cleaning seL4 queue cache: 0x%lx - 0x%lx\n", sel4_q_start, sel4_q_end);
+
+    // for (unsigned long addr = sel4_q_start; addr < sel4_q_end; addr += 64) {
+    //     asm volatile("dc civac, %0" : : "r" (addr) : "memory");
+    // }
+
+    // // 最终的内存屏障确保所有缓存操作完成
+    // asm volatile("dsb sy" : : : "memory");
+    // asm volatile("isb" : : : "memory");
+
+    // printf("[kernel] *** Cache synchronization completed ***\n");
+    // printf("[kernel] *** All shared memory data should now be visible to Root Linux ***\n");
+
+    // // 如果内核端读写都正常，但Root Linux读不到，说明虚拟地址没有正确映射到物理地址
+    // if (readback_sel4 == 0xDEADBEEF && readback_root == 0xCAFEBABE) {
+    //     printf("[kernel] *** CONCLUSION: Kernel virtual addresses work internally ***\n");
+    //     printf("[kernel] *** If Root Linux still reads 0x0, then virtual mapping is WRONG ***\n");
+    //     printf("[kernel] *** This means PPTR_BASE_OFFSET mapping doesn't reach hvisor shared memory ***\n");
+
+    // // 继续初始化队列以便测试
+    // printf("[kernel] *** Continuing with queue initialization for testing ***\n");
+
+    // // 现在进行seL4队列的正式初始化
+    // printf("[kernel] Initializing seL4 queue with expected values...\n");
+    // g_sel4_q_vaddr->working_mark = INIT_MARK_INITIALIZED;  // 0xEEEEEEEE
+    // g_sel4_q_vaddr->buf_size = 16;
+    // g_sel4_q_vaddr->empty_h = 0;
+    // g_sel4_q_vaddr->wait_h = 0;
+    // g_sel4_q_vaddr->proc_ing_h = 0;
+
+    // // 立即验证写入
+    // printf("[kernel] Verification after seL4 queue initialization:\n");
+    // printf("[kernel]   working_mark: 0x%x (expect 0xEEEEEEEE)\n", g_sel4_q_vaddr->working_mark);
+    // printf("[kernel]   buf_size: %u (expect 16)\n", g_sel4_q_vaddr->buf_size);
+
+    // // !!!!! 关键：强制缓存同步，确保working_mark写入对Root Linux可见 !!!!!
+    // printf("[kernel] *** CRITICAL: Forcing cache sync for working_mark write ***\n");
+
+    // // 对seL4队列区域执行缓存清理
+    // unsigned long queue_addr = (unsigned long)g_sel4_q_vaddr;
+    // printf("[kernel] Cleaning seL4 queue cache at 0x%lx for working_mark visibility\n", queue_addr);
+
+    // // 清理整个队列结构的缓存行
+    // for (unsigned long addr = queue_addr; addr < queue_addr + sizeof(struct AmpMsgQueue); addr += 64) {
+    //     asm volatile("dc civac, %0" : : "r" (addr) : "memory");
+    // }
+
+    // // 确保缓存操作完成
+    // asm volatile("dsb sy" : : : "memory");
+    // asm volatile("isb" : : : "memory");
+
+    // printf("[kernel] *** Cache sync completed for working_mark ***\n");
+
+    // if (g_sel4_q_vaddr->working_mark == INIT_MARK_INITIALIZED) {
+    //     printf("[kernel] *** seL4 queue initialization SUCCESS ***\n");
+    //     printf("[kernel] *** ROOT LINUX SHOULD NOW READ 0xEEEEEEEE from physical 0x%lx ***\n", 
+    //            (unsigned long)SHM_PADDR_SEL4_Q);
+    //     printf("[kernel] *** CACHE SYNC ENSURES DATA IS IN MAIN MEMORY ***\n");
+    // } else {
+    //     printf("[kernel] *** seL4 queue initialization FAILED ***\n");
+    // }
+
+    // 初始化其他共享内存状态
+    g_polling_enabled = 1;
+    printf("[kernel] *** SHARED MEMORY COMMUNICATION READY ***\n");
+    printf("[kernel] *** CRITICAL: Wait for Root Linux to detect seL4 working_mark = 0xEEEEEEEE ***\n");
+// }
 }
 
 // 处理来自Root Linux的消息
