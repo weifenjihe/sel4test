@@ -1,1 +1,0 @@
-regen /home/b/test/sel4test/cbuild/kernel/gen_headers/plat/machine/devices_gen.h /home/b/test/sel4test/cbuild/kernel/kernel.dtb;/home/b/test/sel4test/kernel/tools/hardware.yml;/home/b/test/sel4test/kernel/tools/hardware_schema.yml;/home/b/test/sel4test/kernel/tools/hardware_gen.py

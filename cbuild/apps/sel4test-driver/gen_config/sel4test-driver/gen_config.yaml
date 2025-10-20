@@ -1,3 +1,0 @@
-HAVE_TIMER: true # Sel4testHaveTimer=ON
-SIMULATION: false
-HAVE_CACHE: true # Sel4testHaveCache=ON
