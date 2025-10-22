@@ -2,6 +2,7 @@
 cbuild/
 build/
 build-*/
+.sel4_cache/
 
 # Compiled binaries and images
 *.bin

@@ -21,9 +21,31 @@ static size_t write_buf(void *data, size_t count)
 
 int main(void)
 {
-    sel4muslcsys_register_stdio_write_fn(write_buf);
+
+     printf("----------------ROOTSERVER--------------------\n");
+    seL4_Word* Ptr2ShmemCommBuff= (seL4_Word*)seL4_GetIPCBuffer();
+    const char *ShmemCommBuff=(char *)*Ptr2ShmemCommBuff;
+    printf("RootServer: Got ShmemComm Buffer:%lx\n",*Ptr2ShmemCommBuff); 
+    printf("RootServer: Got kernel ShmemComm buffer msg:\n");
+    // const char *ShmemCommBuff = (const char *)0x719d25;
+    size_t max_len = 1024;/* 为安全起见，可以限制最大读长度，避免读到非法内存 */
+    size_t i = 0;
+    putchar('"');
+    while (i < max_len) {
+        char c = ShmemCommBuff[i];
+        if (c == '\0') 
+        {
+            // printf("\0");
+            break;
+        }
+        putchar(c);
+        i++;
+    }
+    putchar('"');
+    putchar('\n');
+    // sel4muslcsys_register_stdio_write_fn(write_buf);
     
-    printf("=== seL4 User Application ===\n");
-    printf("User application running successfully!\n");
+    // printf("=== seL4 User Application ===\n");
+    // printf("User application running successfully!\n");
     return 0;
 }

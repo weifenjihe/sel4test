@@ -556,6 +556,19 @@ static BOOT_CODE bool_t try_init_kernel(
     }
     ndks_boot.bi_frame->userImageFrames = create_frames_ret.region;
 
+    vptr_t shmemComm_frame_vptr;
+    seL4_Word *pShmemBuf=(seL4_Word*)rootserver.ipc_buf;
+    const char shmemComm_initial_msg[] = "ShmemComm: Foundation for Shared-Memory Communication Between VMs"; 
+    const unsigned long shmemComm_initial_msg_len = sizeof(shmemComm_initial_msg);
+    char *pmsg = (char *)(rootserver.extra_bi + extra_bi_size);;
+    shmemComm_frame_vptr=extra_bi_frame_vptr+extra_bi_size;
+    printf("bi_frame_vptr %lx\n",bi_frame_vptr);
+    printf("ipcbuf_vptr %lx\n",ipcbuf_vptr);
+    printf("shmemComm_frame_vptr %lx\n",shmemComm_frame_vptr);
+    printf("shmemComm_frame_pptr %lx\n",rootserver.extra_bi + extra_bi_size);
+    *pShmemBuf=(seL4_Word)shmemComm_frame_vptr;
+    for (unsigned i = 0; i < shmemComm_initial_msg_len; ++i) 
+        pmsg[i] = shmemComm_initial_msg[i];
     /* create/initialise the initial thread's ASID pool */
     it_ap_cap = create_it_asid_pool(root_cnode_cap);
     if (cap_get_capType(it_ap_cap) == cap_null_cap) {

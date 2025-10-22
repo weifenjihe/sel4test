@@ -87,7 +87,7 @@ static void init_env(driver_env_t env)
     printf("=== Starting init_env for Phytium Pi platform ===");
     
     /* create an allocator */
-    printf("Creating allocator with pool size: %zu bytes\n", ALLOCATOR_STATIC_POOL_SIZE);
+    printf("Creating allocator with pool size: %d bytes\n", ALLOCATOR_STATIC_POOL_SIZE);
     allocman = bootstrap_use_current_simple(&env->simple, ALLOCATOR_STATIC_POOL_SIZE, allocator_mem_pool);
     if (allocman == NULL) {
         ZF_LOGF("Failed to create allocman");
@@ -110,7 +110,7 @@ static void init_env(driver_env_t env)
     printf("BootInfo at %p, userImageFrames: %lu-%lu, userImagePaging: %lu-%lu\n", 
             bootinfo, bootinfo->userImageFrames.start, bootinfo->userImageFrames.end,
             bootinfo->userImagePaging.start, bootinfo->userImagePaging.end);
-    printf("BootInfo untypedList: %lu-%lu, initThreadCNodeSizeBits: %u, initThreadDomain: %u\n",
+    printf("BootInfo untypedList: %lu-%lu, initThreadCNodeSizeBits: %lu, initThreadDomain: %lu\n",
             bootinfo->untyped.start, bootinfo->untyped.end, 
             bootinfo->initThreadCNodeSizeBits, bootinfo->initThreadDomain);
     

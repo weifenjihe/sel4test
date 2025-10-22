@@ -40,47 +40,6 @@ static int test_notification_binding(env_t env)
     /* HVISOR COMPATIBILITY: Skip this test due to process argument passing issues */
     printf("BIND0001: Skipping due to hvisor compatibility issues\n");
     return SUCCESS;
-
-    assert(notification_ep);
-    assert(sync_ep);
-
-    /* badge endpoints so we can tell them apart */
-    create_helper_thread(env, &sync);
-    create_helper_thread(env, &notification);
-
-    /* bind the endpoint */
-    int error = seL4_TCB_BindNotification(env->tcb, notification_ep);
-    test_error_eq(error, seL4_NoError);
-
-    start_helper(env, &notification, sender, badged_notification_ep, ASYNC, NUM_RUNS, 0);
-    start_helper(env, &sync, sender, badged_sync_ep, SYNC, NUM_RUNS, 0);
-
-    int num_notification_messages = 0;
-    int num_sync_messages = 0;
-    for (int i = 0; i < NUM_RUNS * 2; i++) {
-        seL4_Word badge = 0;
-        seL4_Wait(sync_ep, &badge);
-
-        switch (badge) {
-        case ASYNC:
-            num_notification_messages++;
-            break;
-        case SYNC:
-            num_sync_messages++;
-            break;
-        }
-    }
-
-    test_check(num_notification_messages == NUM_RUNS);
-    test_check(num_sync_messages == NUM_RUNS);
-
-    error = seL4_TCB_UnbindNotification(env->tcb);
-    test_error_eq(error, seL4_NoError);
-
-    cleanup_helper(env, &sync);
-    cleanup_helper(env, &notification);
-
-    return sel4test_get_result();
 }
 DEFINE_TEST(BIND0001,
             "Test that a bound tcb waiting on a sync endpoint receives normal sync ipc and notification notifications.",
@@ -92,36 +51,6 @@ test_notification_binding_2(env_t env)
     /* HVISOR COMPATIBILITY: Skip this test due to process argument passing issues */
     printf("BIND0002: Skipping due to hvisor compatibility issues\n");
     return SUCCESS;
-
-    /* badge endpoints so we can tell them apart */
-    create_helper_thread(env, &notification);
-
-    /* bind the endpoint */
-    int error = seL4_TCB_BindNotification(env->tcb, notification_ep);
-    test_error_eq(error, seL4_NoError);
-
-    start_helper(env, &notification, sender, badged_notification_ep, ASYNC, NUM_RUNS, 0);
-
-    int num_notification_messages = 0;
-    for (int i = 0; i < NUM_RUNS; i++) {
-        seL4_Word badge = 0;
-        seL4_Wait(notification_ep, &badge);
-
-        switch (badge) {
-        case ASYNC:
-            num_notification_messages++;
-            break;
-        }
-    }
-
-    test_check(num_notification_messages == NUM_RUNS);
-
-    error = seL4_TCB_UnbindNotification(env->tcb);
-    test_error_eq(error, seL4_NoError);
-
-    cleanup_helper(env, &notification);
-
-    return sel4test_get_result();
 }
 DEFINE_TEST(BIND0002, "Test that a bound tcb waiting on its bound notification recieves notifications",
             test_notification_binding_2, true)

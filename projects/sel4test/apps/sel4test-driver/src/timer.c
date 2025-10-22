@@ -143,7 +143,7 @@ void timeout(driver_env_t env, uint64_t ns, timeout_type_t timeout_type)
         /* Check if we have timer IRQ support */
         if (env->ltimer.get_num_irqs == NULL || env->ltimer.get_num_irqs(env->ltimer.data) == 0) {
             /* No IRQ support - simulate timer with immediate callback */
-            printf("Timer: No IRQ support detected, simulating timeout for %llu ns (type: %s)\n", 
+            printf("Timer: No IRQ support detected, simulating timeout for %lu ns (type: %s)\n", 
                    ns, timeout_type == TIMEOUT_PERIODIC ? "PERIODIC" : "ONE_SHOT");
             
             timeServer_noIRQMode = true;
