@@ -224,7 +224,7 @@ void hyperamp_server_main_loop(int max_messages)
     
     printf("\n[kernel] === Starting HyperAMP Message Server ===\n");
     printf("[kernel] Waiting for messages from Root Linux...\n");
-    printf("[kernel] Max messages to process: %d\n", max_messages);
+    printf("[kernel] Continuous polling mode (no message limit)\n");
     printf("[kernel] Polling interval: %dms\n", g_wait_timeout_ms);
     
     g_server_running = 1;
@@ -234,85 +234,69 @@ void hyperamp_server_main_loop(int max_messages)
     // 帮助Root Linux初始化队列
     init_root_linux_queue();
     init_sel4_queue();
-    // 测试共享缓冲区访问
+    
     printf("[kernel] Testing shared buffer access...\n");
-    // if (g_data_vaddr != NULL) {
-    //     // 读取第一个字节测试
-    //     volatile char first_byte = g_data_vaddr[0];
-    //     printf("[kernel] First byte read successful: 0x%02x\n", first_byte);
-        
-    //     // 写入测试数据
-    //     const char* server_ready_msg = "seL4 HyperAMP Server Ready";
-    //     int msg_len = 0;
-    //     while (server_ready_msg[msg_len] != '\0' && msg_len < 63) {
-    //         msg_len++;
-    //     }
-    //     for (int i = 0; i < msg_len; i++) {
-    //         g_data_vaddr[i] = server_ready_msg[i];
-    //     }
-    //     g_data_vaddr[msg_len] = '\0';
-        
-    //     printf("[kernel] Server ready message written to shared buffer\n");
-    // }
     
     // 计算消息实体数组的起始地址
     volatile struct MsgEntry* root_msg_entries = (volatile struct MsgEntry*)((char*)g_root_q_vaddr + sizeof(struct AmpMsgQueue));
     printf("[kernel] Root message entries start at: %p\n", (void*)root_msg_entries);
+    printf("[kernel] *** Server ready, monitoring for valid messages ***\n");
     
-    // 主消息处理循环
-    while (g_server_running && g_message_count < 100) {
-        int found_message = 0;
+    int consecutive_invalid_count = 0;
+    int status_report_counter = 0;
+    
+    // 主消息处理循环 - 持续运行
+    while (g_server_running) {
+        int found_valid_message = 0;
+        g_check_counter++;
         
-        // !!!!! 修复：检查队列状态并处理无效队列头 !!!!!
-        // 如果proc_ing_h >= buf_size，说明队列已经处理完毕或出现错误，重置队列状态
-        if (g_root_q_vaddr->proc_ing_h >= g_root_q_vaddr->buf_size) {
-            if (g_check_counter % 10000 == 0) {  // 每隔一段时间重置一次队列
-                printf("[kernel] Queue head invalid (proc_ing_h=%u >= buf_size=%u), resetting...\n", 
-                       g_root_q_vaddr->proc_ing_h, g_root_q_vaddr->buf_size);
-                g_root_q_vaddr->proc_ing_h = 0;  // 重置队列头
-                g_root_q_vaddr->working_mark = MSG_QUEUE_MARK_IDLE;  // 重置工作状态
-                force_cache_sync_for_shared_memory();  // 确保更改可见
-                printf("[kernel] Queue reset completed, ready for new messages\n");
-            }
-        }
+        // 极限优化策略：每次循环都执行完整缓存清理，确保零消息丢失
+        // 虽然CPU开销增加，但在高频连续发送场景下，这是确保消息实时性的最可靠方法
         
-        // 检查Root Linux队列中的消息
-        if (g_root_q_vaddr->proc_ing_h < g_root_q_vaddr->buf_size) {
-            printf("\n[kernel] *** PROCESSING MESSAGE FROM ROOT LINUX *** Message #%d\n", ++g_message_count);
-            found_message = 1;
-            
-            // 获取当前消息
-            unsigned short head = g_root_q_vaddr->proc_ing_h;
-            volatile struct MsgEntry* msg_entry = &root_msg_entries[head];
+        // 数据同步屏障 + 完整共享内存缓存清理（包含队列和数据区域）
+        force_cache_sync_for_shared_memory();
+        
+        // 检查队列头是否发生变化
+        unsigned short current_proc_head = g_root_q_vaddr->proc_ing_h;
+        
+        // 如果队列头在合理范围内且有数据等待处理
+        if (current_proc_head < g_root_q_vaddr->buf_size) {
+            volatile struct MsgEntry* msg_entry = &root_msg_entries[current_proc_head];
             volatile struct Msg* msg = &msg_entry->msg;
             
-            printf("[kernel]   Message Index: %u\n", head);
-            printf("[kernel]   Service ID: %u\n", msg->service_id);
-            printf("[kernel]   Offset: 0x%x\n", msg->offset);
-            printf("[kernel]   Length: %u\n", msg->length);
-            printf("[kernel]   Deal state: %u\n", msg->flag.deal_state);
-            printf("[kernel]   Next index: %u\n", msg_entry->nxt_idx);
-            
-            // 处理消息数据
-            if (msg->length > 0 && msg->offset < SHM_SIZE_DATA) {
+            // 只处理有效消息：length > 0 且 offset 合理
+            if (msg->length > 0 && msg->length < SHM_SIZE_DATA && 
+                msg->offset < SHM_SIZE_DATA && msg->flag.deal_state != MSG_DEAL_STATE_YES) {
+                
+                found_valid_message = 1;
+                consecutive_invalid_count = 0;
+                
+                printf("\n[kernel] *** VALID MESSAGE FROM ROOT LINUX *** #%d\n", ++g_message_count);
+                printf("[kernel]   Index: %u, Service ID: %u, Offset: 0x%x, Length: %u\n", 
+                       current_proc_head, msg->service_id, msg->offset, msg->length);
+                
+                // 读取并显示数据
                 volatile char* data_ptr = g_data_vaddr + msg->offset;
+                printf("[kernel]   *** DATA: [");
                 
-                printf("[kernel]   Reading data from offset 0x%x, length %u\n", msg->offset, msg->length);
-                
-                // 安全地显示接收到的数据
-                printf("[kernel]   *** DATA FROM ROOT LINUX: [");
-                for (int i = 0; i < msg->length && i < 32; i++) {
+                // 智能显示：如果是可打印字符，直接显示；否则显示十六进制
+                int printable_count = 0;
+                for (int i = 0; i < msg->length && i < 64; i++) {
                     char c = data_ptr[i];
                     if (c >= 32 && c <= 126) {
                         printf("%c", c);
+                        printable_count++;
+                    } else if (c == '\0' && printable_count > 0) {
+                        // 遇到字符串结束符，停止显示
+                        break;
                     } else {
                         printf("\\x%02x", (unsigned char)c);
                     }
                 }
-                if (msg->length > 32) printf("...");
-                printf("] *** \n");
+                if (msg->length > 64) printf("...");
+                printf("] ***\n");
                 
-                // 处理不同的HyperAMP服务
+                // 处理服务请求
                 int service_result = MSG_SERVICE_RET_SUCCESS;
                 int data_modified = 0;
                 
@@ -320,10 +304,9 @@ void hyperamp_server_main_loop(int max_messages)
                     case 1:  // 加密服务
                         printf("[kernel]   [HyperAMP] Executing ENCRYPTION service\n");
                         if (hyperamp_encrypt_service((char*)data_ptr, msg->length, SHM_SIZE_DATA - msg->offset) == 0) {
-                            printf("[kernel]   [HyperAMP] Encryption completed successfully\n");
+                            printf("[kernel]   [HyperAMP] Encryption completed\n");
                             data_modified = 1;
                         } else {
-                            printf("[kernel]   [HyperAMP] Encryption failed\n");
                             service_result = MSG_SERVICE_RET_FAIL;
                         }
                         break;
@@ -331,26 +314,25 @@ void hyperamp_server_main_loop(int max_messages)
                     case 2:  // 解密服务
                         printf("[kernel]   [HyperAMP] Executing DECRYPTION service\n");
                         if (hyperamp_decrypt_service((char*)data_ptr, msg->length, SHM_SIZE_DATA - msg->offset) == 0) {
-                            printf("[kernel]   [HyperAMP] Decryption completed successfully\n");
+                            printf("[kernel]   [HyperAMP] Decryption completed\n");
                             data_modified = 1;
                         } else {
-                            printf("[kernel]   [HyperAMP] Decryption failed\n");
                             service_result = MSG_SERVICE_RET_FAIL;
                         }
                         break;
                         
-                    case 66:  // 测试服务 (Echo)
-                        printf("[kernel]   [HyperAMP] Executing ECHO test service\n");
+                    case 66:  // 测试服务
+                        printf("[kernel]   [HyperAMP] Echo test service\n");
                         break;
                         
                     default:
-                        printf("[kernel]   [HyperAMP] Unknown service ID: %u, treating as echo\n", msg->service_id);
+                        printf("[kernel]   [HyperAMP] Echo service (ID: %u)\n", msg->service_id);
                         break;
                 }
                 
-                // 如果数据被修改，显示处理后的结果
+                // 如果数据被修改，显示处理结果
                 if (data_modified) {
-                    printf("[kernel]   *** PROCESSED DATA: [");
+                    printf("[kernel]   *** RESULT: [");
                     for (int i = 0; i < msg->length && i < 32; i++) {
                         char c = data_ptr[i];
                         if (c >= 32 && c <= 126) {
@@ -359,100 +341,58 @@ void hyperamp_server_main_loop(int max_messages)
                             printf("\\x%02x", (unsigned char)c);
                         }
                     }
-                    if (msg->length > 32) printf("...");
-                    printf("] *** \n");
+                    printf("] ***\n");
                 }
                 
                 // 标记消息已处理
                 msg->flag.deal_state = MSG_DEAL_STATE_YES;
                 msg->flag.service_result = service_result;
                 
-                printf("[kernel]   Message marked as processed\n");
-            } else {
-                printf("[kernel]   Invalid message (length=%u, offset=0x%x)\n", msg->length, msg->offset);
-                msg->flag.deal_state = MSG_DEAL_STATE_YES;
-                msg->flag.service_result = MSG_SERVICE_RET_FAIL;
-            }
-            
-            // !!!!! 修复：智能队列头更新逻辑 !!!!!
-            unsigned short old_head = g_root_q_vaddr->proc_ing_h;
-            unsigned short new_head;
-            
-            // 检查nxt_idx是否有效
-            if (msg_entry->nxt_idx < g_root_q_vaddr->buf_size) {
-                // nxt_idx有效，使用它
-                new_head = msg_entry->nxt_idx;
-                printf("[kernel]   Using valid nxt_idx: %u -> %u\n", old_head, new_head);
-            } else {
-                // nxt_idx无效（可能是垃圾数据），采用简单的循环队列逻辑
-                new_head = (old_head + 1) % g_root_q_vaddr->buf_size;
-                printf("[kernel]   nxt_idx invalid (%u), using circular logic: %u -> %u\n", 
-                       msg_entry->nxt_idx, old_head, new_head);
-            }
-            
-            // 检查是否处理了有效消息
-            if (msg->length > 0 && msg->offset < SHM_SIZE_DATA) {
-                // 有效消息，正常更新队列头
-                g_root_q_vaddr->proc_ing_h = new_head;
-                printf("[kernel]   Valid message processed, updated proc_ing_h to %u\n", new_head);
-            } else {
-                // 无效消息，检查是否已经处理了太多无效消息
-                static int invalid_msg_count = 0;
-                invalid_msg_count++;
+                // 更新队列头
+                unsigned short new_head;
+                if (msg_entry->nxt_idx < g_root_q_vaddr->buf_size) {
+                    new_head = msg_entry->nxt_idx;
+                } else {
+                    new_head = (current_proc_head + 1) % g_root_q_vaddr->buf_size;
+                }
                 
-                if (invalid_msg_count >= 16) {
-                    // 处理了太多无效消息，重置队列等待Root Linux写入新数据
-                    printf("[kernel]   Too many invalid messages (%d), resetting queue for fresh data\n", invalid_msg_count);
+                g_root_q_vaddr->proc_ing_h = new_head;
+                g_root_q_vaddr->working_mark = MSG_QUEUE_MARK_IDLE;
+                
+                // 强制缓存同步
+                force_cache_sync_for_shared_memory();
+                
+                printf("[kernel]   *** Message processed successfully! ***\n");
+                
+            } else {
+                // 无效消息，静默跳过
+                consecutive_invalid_count++;
+                
+                // 如果连续遇到太多无效消息，重置队列状态
+                if (consecutive_invalid_count >= 32) {
+                    // printf("[kernel] Too many invalid messages, resetting queue state\n");
                     g_root_q_vaddr->proc_ing_h = 0;
                     g_root_q_vaddr->working_mark = MSG_QUEUE_MARK_IDLE;
-                    invalid_msg_count = 0;  // 重置计数器
-                } else {
-                    // 继续处理下一个消息
-                    g_root_q_vaddr->proc_ing_h = new_head;
-                    printf("[kernel]   Invalid message #%d, trying next: proc_ing_h = %u\n", 
-                           invalid_msg_count, new_head);
+                    force_cache_sync_for_shared_memory();
+                    consecutive_invalid_count = 0;
                 }
             }
-            
-            // 标记当前消息槽为无效（防止重复处理）
-            msg_entry->nxt_idx = g_root_q_vaddr->buf_size;
-            
-            // 重置工作状态，允许下一次通信
-            g_root_q_vaddr->working_mark = MSG_QUEUE_MARK_IDLE;
-            
-            // !!!!! 强制缓存同步，确保消息处理结果对Root Linux可见 !!!!!
-            printf("[kernel] Forcing cache sync after message processing...\n");
-            force_cache_sync_for_shared_memory();
-            
-            printf("[kernel]   Updated Root Linux proc_ing_h: %u -> %u\n", old_head, new_head);
-            printf("[kernel]   Reset working_mark to IDLE (0x%x)\n", MSG_QUEUE_MARK_IDLE);
-            printf("[kernel]   *** HYPERAMP SERVICE COMPLETED! ***\n");
-            printf("[kernel]   Root Linux should now detect completion and read processed data\n");
         }
         
-        // 如果没有找到消息，定期显示等待状态
-        if (!found_message) {
-            g_check_counter++;
-            if (g_check_counter % 1000 == 0) {  // 每1000次检查显示一次状态（约100秒）
-                printf("[kernel] Waiting... (Check #%d, Root queue proc_ing_h=%u, buf_size=%u, working_mark=0x%x)\n", 
-                       g_check_counter, g_root_q_vaddr->proc_ing_h, g_root_q_vaddr->buf_size, g_root_q_vaddr->working_mark);
-                
-                // 显示当前队列状态的详细信息
-                printf("[kernel] Queue details: empty_h=%u, wait_h=%u, proc_ing_h=%u\n",
-                       g_root_q_vaddr->empty_h, g_root_q_vaddr->wait_h, g_root_q_vaddr->proc_ing_h);
+        // 定期显示监控状态（不要太频繁）
+        if (!found_valid_message) {
+            status_report_counter++;
+            if (status_report_counter >= 600000) {  // 大幅增加间隔，减少噪音日志
+                printf("[kernel] Monitoring... (processed: %d messages, checks: %d, queue_head: %u)\n", 
+                       g_message_count, g_check_counter, g_root_q_vaddr->proc_ing_h);
+                status_report_counter = 0;
             }
         }
         
-        // 简单的延时机制 (在内核中我们使用循环代替sleep)
-        for (volatile int i = 0; i < 100000; i++) {
-            // 空循环实现延时，约100ms
-        }
     }
     
-    g_server_running = 0;
     printf("\n[kernel] === HyperAMP Message Server Stopped ===\n");
-    printf("[kernel] Total messages processed: %d\n", g_message_count);
-    printf("[kernel] Total polling checks: %d\n", g_check_counter);
+    printf("[kernel] Total valid messages processed: %d\n", g_message_count);
 }
 
 // 初始化共享内存映射 (内核启动时调用)
@@ -807,6 +747,14 @@ void get_shared_memory_status(void)
     printf("[kernel] Polling enabled: %s\n", g_polling_enabled ? "YES" : "NO");
     printf("[kernel] Messages processed: %d\n", g_message_count);
 }
+
+// 连续监控共享内存消息 (无限循环模式)
+// void hyperamp_server_continuous_mode(void)
+// {
+//     printf("[kernel] Starting HyperAMP server in continuous mode\n");
+//     g_server_running = 1;  // 确保服务器保持运行
+//     hyperamp_server_main_loop(0);  // 参数被忽略，函数内部使用无限循环
+// }
 
 // 简单的消息收发测试 (供内核模块调用)
 void test_shared_memory_communication(void)
