@@ -27,13 +27,16 @@
 #define INIT_MARK_INITIALIZED  (0xEEEEEEEEU)
 #define MSG_QUEUE_MARK_IDLE    (0xBBBBBBBBU)
 
-// 消息处理状态
-#define MSG_DEAL_STATE_NO      (0)
-#define MSG_DEAL_STATE_YES     (1)
+// 消息处理状态 - 与Linux端保持一致
+#define MSG_DEAL_STATE_NO      (0)  // not dealt yet
+#define MSG_DEAL_STATE_YES     (1)  // has dealt
 
-// 服务处理结果
-#define MSG_SERVICE_RET_SUCCESS (0)
-#define MSG_SERVICE_RET_FAIL    (1)
+// 服务处理结果 - 与Linux端保持一致  
+#define MSG_SERVICE_RET_NONE       (0)  // 消息还未被处理
+#define MSG_SERVICE_RET_SUCCESS    (1)  // 服务正确响应
+#define MSG_SERVICE_RET_FAIL       (2)  // 服务未曾正确服务，或参数错误等
+#define MSG_SERVICE_RET_NOT_EXITS  (3)  // 请求的服务不存在
+#define MSG_SERVICE_RET_WAIT       (4)  // 被引入用户态，等待处理
 
 // AMP消息队列结构
 struct AmpMsgQueue {
@@ -44,18 +47,19 @@ struct AmpMsgQueue {
     unsigned short proc_ing_h;
 };
 
-// 消息标志结构
+// 消息标志结构 - 必须与Linux端完全一致！
 struct MsgFlag {
-    unsigned char deal_state;    // 处理状态
-    unsigned char service_result; // 服务结果
+    unsigned short deal_state : 1;     // 1位：消息是否被处理
+    unsigned short service_result : 2; // 2位：消息对应的服务是否被正确服务
+    unsigned short reserved : 13;      // 13位：保留位，确保总共16位
 };
 
-// 消息结构
+// 消息结构 - 必须与Linux端字段顺序和类型完全一致！
 struct Msg {
-    unsigned int service_id;     // 服务ID
-    unsigned int offset;         // 数据在共享缓冲区中的偏移
-    unsigned int length;         // 数据长度
-    struct MsgFlag flag;         // 消息标志
+    struct MsgFlag flag;         // 消息标志 (2字节，位于开头)
+    unsigned short service_id;   // 服务ID (2字节，不是4字节!)
+    unsigned int offset;         // 数据在共享缓冲区中的偏移 (4字节)
+    unsigned int length;         // 数据长度 (4字节)
 };
 
 // 消息实体结构
@@ -299,7 +303,7 @@ void hyperamp_server_main_loop(int max_messages)
                 // 处理服务请求
                 int service_result = MSG_SERVICE_RET_SUCCESS;
                 int data_modified = 0;
-                
+
                 switch (msg->service_id) {
                     case 1:  // 加密服务
                         printf("[kernel]   [HyperAMP] Executing ENCRYPTION service\n");
