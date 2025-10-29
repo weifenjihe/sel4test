@@ -15,6 +15,8 @@
 #include <plat/machine/hardware.h>
 #include <arch/machine/hardware.h>
 #include <util.h>
+#include <stdint.h>
+#include <string.h>
 
 // 共享内存物理地址定义 (与hvisor配置一致)
 #define SHM_PADDR_DATA      0xDE000000UL
@@ -81,6 +83,390 @@ static int g_server_running = 0;
 // 内核级消息服务器状态
 static int g_check_counter = 0;
 static int g_wait_timeout_ms = 100;  // 轮询间隔
+
+// ================== 代理消息数据结构定义 ==================
+
+// | 消息类型 | proxy_msg_type| 内层消息头类型   |    典型用途          |
+// | 设备消息 |     0         | DevMsgHeader    | 设备启用/禁用/查询 |
+// | 策略消息 |     1         | StrgyMsgHeader  | 负载均衡策略设置/查询 |
+// | 会话消息 |     2         | SessMsgHeader   | TCP/UDP会话创建/关闭 |
+// | 数据消息 |     3         | ProxyMsgHeader  | 实际网络数据转发 |
+
+// 外层消息头 (ProxyMsgHeader - 8字节)
+typedef struct {
+    uint8_t  version;             // 协议版本
+    uint8_t  proxy_msg_type;      // 消息类型: 0=设备, 1=策略, 2=会话, 3=数据
+    uint16_t frontend_sess_id;    // 前端会话ID
+    uint16_t backend_sess_id;     // 后端会话ID
+    uint16_t payload_len;         // 载荷长度
+} __attribute__((packed)) ProxyMsgHeader;
+
+// 设备消息头 (DevMsgHeader - 10字节)
+typedef struct {
+    uint16_t version;        // 协议版本
+    uint16_t msg_type;       // 消息类型: 0=禁用, 1=启用, 2=查询
+    uint16_t msg_id;         // 消息ID
+    uint16_t action_type;    // 动作类型: 0=命令, 1=响应
+    uint16_t payload_len;    // 载荷长度
+} __attribute__((packed)) DevMsgHeader;
+
+// 策略消息头 (StrgyMsgHeader - 10字节)
+typedef struct {
+    uint16_t version;       // 协议版本
+    uint16_t msg_type;      // 消息类型: 0=设置, 1=查询
+    uint16_t msg_id;        // 消息ID
+    uint16_t action_type;   // 动作类型: 0=命令, 1=响应
+    uint16_t payload_len;   // 载荷长度
+} __attribute__((packed)) StrgyMsgHeader;
+
+// 会话消息头 (SessMsgHeader - 10字节)
+typedef struct {
+    uint16_t version;        // 协议版本
+    uint16_t msg_type;       // 消息类型: 0=关闭, 1=创建
+    uint16_t action_type;    // 动作类型: 0=命令, 1=响应
+    uint16_t ip_version;     // IP版本: 4=IPv4, 6=IPv6
+    uint16_t payload_len;    // 载荷长度
+} __attribute__((packed)) SessMsgHeader;
+
+// 设备消息载荷 (2字节)
+typedef struct {
+    uint16_t data;   // 设备掩码或状态数据
+} __attribute__((packed)) DevMsgMask;
+
+// 设备查询响应 (4字节)
+typedef struct {
+    uint8_t  status;    // 状态码
+    uint8_t  error;     // 错误码
+    uint16_t data;      // 设备掩码
+} __attribute__((packed)) DevMsgReport;
+
+// 策略响应 (4字节)
+typedef struct {
+    uint8_t  status;    // 状态码
+    uint8_t  error;     // 错误码
+    uint16_t data;      // 策略数据
+} __attribute__((packed)) StrgyMsgReport;
+
+// 会话操作响应 (2字节)
+typedef struct {
+    uint8_t status;     // 状态: 0=成功, 1=失败
+    uint8_t code;       // 错误码
+} __attribute__((packed)) SessOpRespData;
+
+// IPv4地址结构
+typedef struct {
+    uint8_t data[4];
+} __attribute__((packed)) IPv4Address;
+
+// IPv4会话参数 (10字节)
+typedef struct {
+    uint16_t      device_selection;       // 设备选择
+    uint16_t      transport_layer_proto;  // 传输层协议: 0=UDP, 1=TCP
+    IPv4Address   dest_ipv4;              // 目标IPv4地址
+    uint16_t      dest_port;              // 目标端口
+} __attribute__((packed)) SessIPv4Params;
+
+// ================== 消息解析函数 ==================
+
+// 解析设备消息
+static void parse_device_message(const char *data_ptr, unsigned int length)
+{
+    if (length < sizeof(ProxyMsgHeader) + sizeof(DevMsgHeader)) {
+        printf("[proxy] Device message too short: %u bytes\n", length);
+        return;
+    }
+    
+    // 解析外层消息头
+    const ProxyMsgHeader *outer_hdr = (const ProxyMsgHeader *)data_ptr;
+    printf("[proxy] === Device Message ===\n");
+    printf("[proxy] Outer Header:\n");
+    printf("[proxy]   version: %u\n", outer_hdr->version);
+    printf("[proxy]   proxy_msg_type: %u (DEVICE)\n", outer_hdr->proxy_msg_type);
+    printf("[proxy]   frontend_sess_id: %u\n", outer_hdr->frontend_sess_id);
+    printf("[proxy]   backend_sess_id: %u\n", outer_hdr->backend_sess_id);
+    printf("[proxy]   payload_len: %u\n", outer_hdr->payload_len);
+    
+    // 解析内层消息头
+    const DevMsgHeader *inner_hdr = (const DevMsgHeader *)(data_ptr + sizeof(ProxyMsgHeader));
+    printf("[proxy] Device Header:\n");
+    printf("[proxy]   version: %u\n", inner_hdr->version);
+    
+    const char *msg_type_str[] = {"DISABLE", "ENABLE", "QUERY"};
+    printf("[proxy]   msg_type: %u (%s)\n", inner_hdr->msg_type, 
+           inner_hdr->msg_type <= 2 ? msg_type_str[inner_hdr->msg_type] : "UNKNOWN");
+    
+    printf("[proxy]   msg_id: %u\n", inner_hdr->msg_id);
+    printf("[proxy]   action_type: %u (%s)\n", inner_hdr->action_type,
+           inner_hdr->action_type == 0 ? "COMMAND" : "RESPONSE");
+    printf("[proxy]   payload_len: %u\n", inner_hdr->payload_len);
+    
+    // 解析载荷
+    const uint8_t *payload = (const uint8_t *)(data_ptr + sizeof(ProxyMsgHeader) + sizeof(DevMsgHeader));
+    
+    if (inner_hdr->msg_type == 2 && inner_hdr->action_type == 1) {
+        // 查询响应: 4字节
+        if (inner_hdr->payload_len >= sizeof(DevMsgReport)) {
+            const DevMsgReport *report = (const DevMsgReport *)payload;
+            printf("[proxy] Device Query Response:\n");
+            printf("[proxy]   status: %u\n", report->status);
+            printf("[proxy]   error: %u\n", report->error);
+            printf("[proxy]   active_devices: 0x%04x\n", report->data);
+        }
+    } else {
+        // 启用/禁用: 2字节
+        if (inner_hdr->payload_len >= sizeof(DevMsgMask)) {
+            const DevMsgMask *mask = (const DevMsgMask *)payload;
+            printf("[proxy] Device Mask: 0x%04x\n", mask->data);
+        }
+    }
+}
+
+// 解析策略消息
+static void parse_strategy_message(const char *data_ptr, unsigned int length)
+{
+    if (length < sizeof(ProxyMsgHeader) + sizeof(StrgyMsgHeader)) {
+        printf("[proxy] Strategy message too short: %u bytes\n", length);
+        return;
+    }
+    
+    const ProxyMsgHeader *outer_hdr = (const ProxyMsgHeader *)data_ptr;
+    printf("[proxy] === Strategy Message ===\n");
+    printf("[proxy] Outer Header:\n");
+    printf("[proxy]   version: %u\n", outer_hdr->version);
+    printf("[proxy]   proxy_msg_type: %u (STRATEGY)\n", outer_hdr->proxy_msg_type);
+    printf("[proxy]   frontend_sess_id: %u\n", outer_hdr->frontend_sess_id);
+    printf("[proxy]   backend_sess_id: %u\n", outer_hdr->backend_sess_id);
+    printf("[proxy]   payload_len: %u\n", outer_hdr->payload_len);
+    
+    const StrgyMsgHeader *inner_hdr = (const StrgyMsgHeader *)(data_ptr + sizeof(ProxyMsgHeader));
+    printf("[proxy] Strategy Header:\n");
+    printf("[proxy]   version: %u\n", inner_hdr->version);
+    
+    const char *msg_type_str[] = {"SET", "QUERY"};
+    printf("[proxy]   msg_type: %u (%s)\n", inner_hdr->msg_type,
+           inner_hdr->msg_type <= 1 ? msg_type_str[inner_hdr->msg_type] : "UNKNOWN");
+    
+    printf("[proxy]   msg_id: %u\n", inner_hdr->msg_id);
+    printf("[proxy]   action_type: %u (%s)\n", inner_hdr->action_type,
+           inner_hdr->action_type == 0 ? "COMMAND" : "RESPONSE");
+    printf("[proxy]   payload_len: %u\n", inner_hdr->payload_len);
+    
+    const uint8_t *payload = (const uint8_t *)(data_ptr + sizeof(ProxyMsgHeader) + sizeof(StrgyMsgHeader));
+    
+    if (inner_hdr->msg_type == 1 && inner_hdr->action_type == 1) {
+        // 查询响应
+        if (inner_hdr->payload_len >= sizeof(StrgyMsgReport)) {
+            const StrgyMsgReport *report = (const StrgyMsgReport *)payload;
+            printf("[proxy] Strategy Query Response:\n");
+            printf("[proxy]   status: %u\n", report->status);
+            printf("[proxy]   error: %u\n", report->error);
+            printf("[proxy]   current_strategy: %u\n", report->data);
+        }
+    } else {
+        // 设置命令/响应
+        if (inner_hdr->payload_len >= 2) {
+            uint16_t strategy = *(const uint16_t *)payload;
+            printf("[proxy] Strategy Parameter: %u\n", strategy);
+        }
+    }
+}
+
+// 解析会话消息
+static void parse_session_message(const char *data_ptr, unsigned int length)
+{
+    if (length < sizeof(ProxyMsgHeader) + sizeof(SessMsgHeader)) {
+        printf("[proxy] Session message too short: %u bytes\n", length);
+        return;
+    }
+    
+    const ProxyMsgHeader *outer_hdr = (const ProxyMsgHeader *)data_ptr;
+    printf("[proxy] === Session Message ===\n");
+    printf("[proxy] Outer Header:\n");
+    printf("[proxy]   version: %u\n", outer_hdr->version);
+    printf("[proxy]   proxy_msg_type: %u (SESSION)\n", outer_hdr->proxy_msg_type);
+    printf("[proxy]   frontend_sess_id: %u\n", outer_hdr->frontend_sess_id);
+    printf("[proxy]   backend_sess_id: %u\n", outer_hdr->backend_sess_id);
+    printf("[proxy]   payload_len: %u\n", outer_hdr->payload_len);
+    
+    const SessMsgHeader *inner_hdr = (const SessMsgHeader *)(data_ptr + sizeof(ProxyMsgHeader));
+    printf("[proxy] Session Header:\n");
+    printf("[proxy]   version: %u\n", inner_hdr->version);
+    
+    const char *msg_type_str[] = {"CLOSE", "CREATE"};
+    printf("[proxy]   msg_type: %u (%s)\n", inner_hdr->msg_type,
+           inner_hdr->msg_type <= 1 ? msg_type_str[inner_hdr->msg_type] : "UNKNOWN");
+    
+    printf("[proxy]   action_type: %u (%s)\n", inner_hdr->action_type,
+           inner_hdr->action_type == 0 ? "COMMAND" : "RESPONSE");
+    printf("[proxy]   ip_version: %u (IPv%u)\n", inner_hdr->ip_version, inner_hdr->ip_version);
+    printf("[proxy]   payload_len: %u\n", inner_hdr->payload_len);
+    
+    const uint8_t *payload = (const uint8_t *)(data_ptr + sizeof(ProxyMsgHeader) + sizeof(SessMsgHeader));
+    
+    if (inner_hdr->action_type == 1) {
+        // 响应消息
+        if (inner_hdr->payload_len >= sizeof(SessOpRespData)) {
+            const SessOpRespData *resp = (const SessOpRespData *)payload;
+            printf("[proxy] Session Response:\n");
+            printf("[proxy]   status: %u (%s)\n", resp->status, 
+                   resp->status == 0 ? "SUCCESS" : "FAIL");
+            printf("[proxy]   code: %u\n", resp->code);
+        }
+    } else {
+        // 命令消息 - 会话参数
+        if (inner_hdr->ip_version == 4 && inner_hdr->payload_len >= sizeof(SessIPv4Params)) {
+            const SessIPv4Params *params = (const SessIPv4Params *)payload;
+            printf("[proxy] IPv4 Session Parameters:\n");
+            printf("[proxy]   device: %u\n", params->device_selection);
+            printf("[proxy]   protocol: %u (%s)\n", params->transport_layer_proto,
+                   params->transport_layer_proto == 1 ? "TCP" : "UDP");
+            printf("[proxy]   dest_ip: %u.%u.%u.%u\n",
+                   params->dest_ipv4.data[0], params->dest_ipv4.data[1],
+                   params->dest_ipv4.data[2], params->dest_ipv4.data[3]);
+            printf("[proxy]   dest_port: %u\n", params->dest_port);
+        }
+    }
+}
+
+// 解析数据消息
+static void parse_data_message(const char *data_ptr, unsigned int length)
+{
+    if (length < sizeof(ProxyMsgHeader)) {
+        printf("[proxy] Data message too short: %u bytes\n", length);
+        return;
+    }
+    
+    const ProxyMsgHeader *outer_hdr = (const ProxyMsgHeader *)data_ptr;
+    printf("[proxy] === Data Message ===\n");
+    printf("[proxy] Outer Header:\n");
+    printf("[proxy]   version: %u\n", outer_hdr->version);
+    printf("[proxy]   proxy_msg_type: %u (DATA)\n", outer_hdr->proxy_msg_type);
+    printf("[proxy]   frontend_sess_id: %u\n", outer_hdr->frontend_sess_id);
+    printf("[proxy]   backend_sess_id: %u\n", outer_hdr->backend_sess_id);
+    printf("[proxy]   payload_len: %u\n", outer_hdr->payload_len);
+    
+    // 数据消息没有内层消息头,直接是载荷
+    const uint8_t *payload = (const uint8_t *)(data_ptr + sizeof(ProxyMsgHeader));
+    unsigned int payload_len = outer_hdr->payload_len;
+    
+    printf("[proxy] Data Payload (%u bytes):\n", payload_len);
+    
+    // 尝试判断是否为HTTP数据
+    if (payload_len > 4) {
+        // 手动比较字符串，避免使用memcmp，使用int代替bool
+        int is_http = (payload[0] == 'H' && payload[1] == 'T' && 
+                       payload[2] == 'T' && payload[3] == 'P');
+        int is_get = (payload[0] == 'G' && payload[1] == 'E' && 
+                      payload[2] == 'T' && payload[3] == ' ');
+        int is_post = (payload[0] == 'P' && payload[1] == 'O' && 
+                       payload[2] == 'S' && payload[3] == 'T');
+        
+        if (is_http || is_get || is_post) {
+            printf("[proxy]   [HTTP Data] ");
+            for (unsigned int i = 0; i < payload_len && i < 100; i++) {
+                if (payload[i] >= 32 && payload[i] <= 126) {
+                    printf("%c", payload[i]);
+                } else if (payload[i] == '\r' || payload[i] == '\n') {
+                    printf("\\n");
+                } else {
+                    printf(".");
+                }
+            }
+            if (payload_len > 100) printf("...");
+            printf("\n");
+        } else {
+            // 十六进制显示
+            printf("[proxy]   [HEX] ");
+            for (unsigned int i = 0; i < payload_len && i < 64; i++) {
+                printf("%02x ", payload[i]);
+            }
+            if (payload_len > 64) printf("...");
+            printf("\n");
+        }
+    } else {
+        // 十六进制显示
+        printf("[proxy]   [HEX] ");
+        for (unsigned int i = 0; i < payload_len && i < 64; i++) {
+            printf("%02x ", payload[i]);
+        }
+        if (payload_len > 64) printf("...");
+        printf("\n");
+    }
+}
+
+// 将单个十六进制字符转换为数值 ('0'-'9', 'a'-'f', 'A'-'F')
+static int hex_char_to_value(char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;  // 无效字符
+}
+
+// 将十六进制字符串转换为二进制数据
+// 输入: hex_str = "0100000000000c00" (ASCII字符串)
+// 输出: binary_buf = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0c, 0x00}
+// 返回值: 转换后的字节数，失败返回-1
+static int hex_string_to_binary(const char *hex_str, unsigned int hex_len, 
+                                 unsigned char *binary_buf, unsigned int buf_size)
+{
+    // 容错处理：如果长度为奇数，检查最后一个字符是否为无效字符（如'\0'或'\n'）
+    if (hex_len % 2 != 0) {
+        // 检查最后一个字符
+        char last_char = hex_str[hex_len - 1];
+        if (last_char == '\0' || last_char == '\n' || last_char == '\r' || last_char < 32) {
+            // 忽略最后一个无效字符
+            printf("[kernel] [HEX] Warning: Ignoring trailing byte 0x%02x at position %u\n", 
+                   (unsigned char)last_char, hex_len - 1);
+            hex_len--;  // 减去1，变成偶数
+        } else {
+            printf("[kernel] [HEX] Invalid hex string length: %u (must be even)\n", hex_len);
+            printf("[kernel] [HEX] Last char: 0x%02x ('%c')\n", 
+                   (unsigned char)last_char, 
+                   (last_char >= 32 && last_char <= 126) ? last_char : '.');
+            return -1;
+        }
+    }
+    
+    // 如果调整后长度为0，则无有效数据
+    if (hex_len == 0) {
+        printf("[kernel] [HEX] Error: no valid hex characters after adjustment\n");
+        return -1;
+    }
+    
+    unsigned int binary_len = hex_len / 2;
+    
+    // 检查输出缓冲区大小
+    if (binary_len > buf_size) {
+        printf("[kernel] [HEX] Buffer too small: need %u, have %u\n", binary_len, buf_size);
+        return -1;
+    }
+    
+    printf("[kernel] [HEX] Converting %u chars to %u bytes\n", hex_len, binary_len);
+    
+    // 转换每两个十六进制字符为一个字节
+    for (unsigned int i = 0; i < binary_len; i++) {
+        int high = hex_char_to_value(hex_str[i * 2]);
+        int low = hex_char_to_value(hex_str[i * 2 + 1]);
+        
+        if (high < 0 || low < 0) {
+            printf("[kernel] [HEX] Invalid hex character at position %u\n", i * 2);
+            return -1;
+        }
+        
+        binary_buf[i] = (unsigned char)((high << 4) | low);
+    }
+    
+    // 显示转换结果的前几个字节用于调试
+    printf("[kernel] [HEX] Converted: ");
+    for (unsigned int i = 0; i < binary_len && i < 8; i++) {
+        printf("%02x ", binary_buf[i]);
+    }
+    if (binary_len > 8) printf("...");
+    printf("(%u bytes total)\n", binary_len);
+    
+    return binary_len;
+}
 
 // !!!!! 新增：强制缓存同步函数，解决缓存一致性问题 !!!!!
 static void force_cache_sync_for_shared_memory(void)
@@ -283,7 +669,7 @@ void hyperamp_server_main_loop(int max_messages)
                 volatile char* data_ptr = g_data_vaddr + msg->offset;
                 printf("[kernel]   *** DATA: [");
                 
-                // 智能显示：如果是可打印字符，直接显示；否则显示十六进制
+                // 先显示前64个字符（智能显示）
                 int printable_count = 0;
                 for (int i = 0; i < msg->length && i < 64; i++) {
                     char c = data_ptr[i];
@@ -300,9 +686,23 @@ void hyperamp_server_main_loop(int max_messages)
                 if (msg->length > 64) printf("...");
                 printf("] ***\n");
                 
+                // 如果数据长度超过64字符，显示完整的十六进制数据用于调试
+                if (msg->length > 64) {
+                    printf("[kernel]   *** FULL HEX DATA: ");
+                    for (int i = 0; i < msg->length && i < 256; i++) {  // 最多显示256字节
+                        printf("%02x", (unsigned char)data_ptr[i]);
+                    }
+                    if (msg->length > 256) printf("...");
+                    printf(" (%u bytes) ***\n", msg->length);
+                }
+                
                 // 处理服务请求
                 int service_result = MSG_SERVICE_RET_SUCCESS;
                 int data_modified = 0;
+                
+                // 代理消息处理需要的缓冲区（在switch之前声明，避免重复声明）
+                unsigned char binary_buf[2048];
+                int binary_len;
 
                 switch (msg->service_id) {
                     case 1:  // 加密服务
@@ -324,9 +724,53 @@ void hyperamp_server_main_loop(int max_messages)
                             service_result = MSG_SERVICE_RET_FAIL;
                         }
                         break;
+                    
+                    case 10:  // 设备消息服务
+                        binary_len = hex_string_to_binary((const char*)data_ptr, msg->length,
+                                                         binary_buf, sizeof(binary_buf));
+                        if (binary_len > 0) {
+                            printf("[kernel]   [Proxy] Processing DEVICE message (Service ID: 10)\n");
+                            parse_device_message((const char*)binary_buf, binary_len);
+                            service_result = MSG_SERVICE_RET_SUCCESS;
+                        } else {
+                            service_result = MSG_SERVICE_RET_FAIL;
+                        }
+                        break;
                         
-                    case 66:  // 测试服务
-                        printf("[kernel]   [HyperAMP] Echo test service\n");
+                    case 11:  // 策略消息服务
+                        binary_len = hex_string_to_binary((const char*)data_ptr, msg->length,
+                                                         binary_buf, sizeof(binary_buf));
+                        if (binary_len > 0) {
+                            printf("[kernel]   [Proxy] Processing STRATEGY message (Service ID: 11)\n");
+                            parse_strategy_message((const char*)binary_buf, binary_len);
+                            service_result = MSG_SERVICE_RET_SUCCESS;
+                        } else {
+                            service_result = MSG_SERVICE_RET_FAIL;
+                        }
+                        break;
+                        
+                    case 12:  // 会话消息服务
+                        binary_len = hex_string_to_binary((const char*)data_ptr, msg->length,
+                                                         binary_buf, sizeof(binary_buf));
+                        if (binary_len > 0) {
+                            printf("[kernel]   [Proxy] Processing SESSION message (Service ID: 12)\n");
+                            parse_session_message((const char*)binary_buf, binary_len);
+                            service_result = MSG_SERVICE_RET_SUCCESS;
+                        } else {
+                            service_result = MSG_SERVICE_RET_FAIL;
+                        }
+                        break;
+                        
+                    case 13:  // 数据消息服务
+                        binary_len = hex_string_to_binary((const char*)data_ptr, msg->length,
+                                                         binary_buf, sizeof(binary_buf));
+                        if (binary_len > 0) {
+                            printf("[kernel]   [Proxy] Processing DATA message (Service ID: 13)\n");
+                            parse_data_message((const char*)binary_buf, binary_len);
+                            service_result = MSG_SERVICE_RET_SUCCESS;
+                        } else {
+                            service_result = MSG_SERVICE_RET_FAIL;
+                        }
                         break;
                         
                     default:
