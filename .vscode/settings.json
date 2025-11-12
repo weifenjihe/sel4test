@@ -12,7 +12,9 @@
     "msg.h": "c",
     "autoconf.h": "c",
     "allocman.h": "c",
-    "simple-default.h": "c"
+    "simple-default.h": "c",
+    "shared_memory.h": "c",
+    "failures.h": "c"
   },
   "C_Cpp_Runner.cCompilerPath": "gcc",
   "C_Cpp_Runner.cppCompilerPath": "g++",

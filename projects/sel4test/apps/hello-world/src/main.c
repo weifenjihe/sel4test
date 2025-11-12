@@ -19,23 +19,15 @@ static size_t write_buf(void *data, size_t count)
     return count;
 }
 
-int main(void)
+void printString(char* str)
 {
-
-     printf("----------------ROOTSERVER--------------------\n");
-    seL4_Word* Ptr2ShmemCommBuff= (seL4_Word*)seL4_GetIPCBuffer();
-    const char *ShmemCommBuff=(char *)*Ptr2ShmemCommBuff;
-    printf("RootServer: Got ShmemComm Buffer:%lx\n",*Ptr2ShmemCommBuff); 
-    printf("RootServer: Got kernel ShmemComm buffer msg:\n");
-    // const char *ShmemCommBuff = (const char *)0x719d25;
     size_t max_len = 1024;/* 为安全起见，可以限制最大读长度，避免读到非法内存 */
     size_t i = 0;
     putchar('"');
     while (i < max_len) {
-        char c = ShmemCommBuff[i];
+        char c = str[i];
         if (c == '\0') 
         {
-            // printf("\0");
             break;
         }
         putchar(c);
@@ -43,9 +35,27 @@ int main(void)
     }
     putchar('"');
     putchar('\n');
-    // sel4muslcsys_register_stdio_write_fn(write_buf);
+}
+
+int main(void) {
+    printf("----------------ROOTSERVER--------------------\n");
+    seL4_Word* Ptr2ShmemCommBuff= (seL4_Word*)seL4_GetIPCBuffer();
+    unsigned long long *vaddrs=(unsigned long long *)*Ptr2ShmemCommBuff;
     
-    // printf("=== seL4 User Application ===\n");
-    // printf("User application running successfully!\n");
+    // 打印三个共享内存区域的虚拟地址
+    printf("Shmem Comm VAddrs:\n");
+    printf("  DATA VADDR: 0x%llx\n", vaddrs[0]);
+    printf("  ROOT_Q VADDR: 0x%llx\n", vaddrs[1]);
+    printf("  SEL4_Q VADDR: 0x%llx\n", vaddrs[2]);
+    printf("--------------------------------------------\n");
+    
+    for (size_t i = 0; i < 3; i++)
+    {
+        printString((char*)(vaddrs[i]));
+    }
+    while (1)
+    {
+        /* infinite loop */
+    }
     return 0;
 }

@@ -556,19 +556,54 @@ static BOOT_CODE bool_t try_init_kernel(
     }
     ndks_boot.bi_frame->userImageFrames = create_frames_ret.region;
 
-    vptr_t shmemComm_frame_vptr;
-    seL4_Word *pShmemBuf=(seL4_Word*)rootserver.ipc_buf;
-    const char shmemComm_initial_msg[] = "ShmemComm: Foundation for Shared-Memory Communication Between VMs"; 
-    const unsigned long shmemComm_initial_msg_len = sizeof(shmemComm_initial_msg);
-    char *pmsg = (char *)(rootserver.extra_bi + extra_bi_size);;
-    shmemComm_frame_vptr=extra_bi_frame_vptr+extra_bi_size;
-    printf("bi_frame_vptr %lx\n",bi_frame_vptr);
-    printf("ipcbuf_vptr %lx\n",ipcbuf_vptr);
-    printf("shmemComm_frame_vptr %lx\n",shmemComm_frame_vptr);
-    printf("shmemComm_frame_pptr %lx\n",rootserver.extra_bi + extra_bi_size);
-    *pShmemBuf=(seL4_Word)shmemComm_frame_vptr;
-    for (unsigned i = 0; i < shmemComm_initial_msg_len; ++i) 
-        pmsg[i] = shmemComm_initial_msg[i];
+    // DEPRECATED: 202510 increment
+    // Following 202511 increment should work just fine without DEPRECATED code
+
+    // vptr_t shmemComm_frame_vptr;
+    // seL4_Word *pShmemBuf=(seL4_Word*)rootserver.ipc_buf;
+    // const char shmemComm_initial_msg[] = "ShmemComm: Foundation for Shared-Memory Communication Between VMs"; 
+    // const unsigned long shmemComm_initial_msg_len = sizeof(shmemComm_initial_msg);
+    // char *pmsg = (char *)(rootserver.extra_bi + extra_bi_size);
+    // shmemComm_frame_vptr=extra_bi_frame_vptr+extra_bi_size;
+    // printf("bi_frame_vptr %lx\n",bi_frame_vptr);
+    // printf("ipcbuf_vptr %lx\n",ipcbuf_vptr);
+    // printf("shmemComm_frame_vptr %lx\n",shmemComm_frame_vptr);
+    // printf("shmemComm_frame_pptr %lx\n",rootserver.extra_bi + extra_bi_size);
+    // *pShmemBuf=(seL4_Word)shmemComm_frame_vptr;
+    // for (unsigned i = 0; i < shmemComm_initial_msg_len; ++i) 
+    //     pmsg[i] = shmemComm_initial_msg[i];
+
+    //202511 increment    
+    //store the first available vaddr in ipc buffer
+    seL4_Word *ipcBuf=(seL4_Word*)rootserver.ipc_buf;
+    *ipcBuf=(seL4_Word)(extra_bi_frame_vptr+extra_bi_size);
+    //store shm: DATA ROOT_Q SEL4_Q vaddrs in first available addr
+    unsigned long long *addrMsg = (unsigned long long *)(rootserver.extra_bi + extra_bi_size);
+    const unsigned long long shmemComm_frame_vaddrs[] = 
+            {SHM_VADDR_DATA,SHM_VADDR_ROOT_Q,SHM_VADDR_SEL4_Q};  
+    for (unsigned i = 0; i < 3; ++i) 
+        addrMsg[i] = shmemComm_frame_vaddrs[i];  
+    //store some strings in DATA ROOT_Q SEL4_Q vaddrs to verify correctness and functionality
+    const char shmemComm_data_msg[]="SHM_DATA";
+    const char shmemComm_rootq_msg[]="SHM_ROOT_Q";
+    const char shmemComm_sel4q_msg[]="SHM_SEL4_Q";
+    printf("boot.c ShmemComm: SHM_PADDR_DATA 0x%lx\n",SHM_PADDR_DATA);   
+    printf("boot.c ShmemComm: SHM_VADDR_DATA %lu\n",SHM_VADDR_DATA);  
+    char *pmsg;  
+    pmsg = (char *)SHM_VADDR_DATA;
+    for (unsigned i = 0; i < sizeof(shmemComm_data_msg); ++i) 
+        pmsg[i] = shmemComm_data_msg[i];
+    printf("boot.c ShmemComm: SHM_PADDR_ROOT_Q 0x%lx\n",SHM_PADDR_ROOT_Q);   
+    printf("boot.c ShmemComm: SHM_VADDR_ROOT_Q %lu\n",SHM_VADDR_ROOT_Q);
+    pmsg = (char *)SHM_VADDR_ROOT_Q;
+    for (unsigned i = 0; i < sizeof(shmemComm_rootq_msg); ++i) 
+        pmsg[i] = shmemComm_rootq_msg[i];
+    printf("boot.c ShmemComm: SHM_PADDR_SEL4_Q 0x%lx\n",SHM_PADDR_SEL4_Q);   
+    printf("boot.c ShmemComm: SHM_VADDR_SEL4_Q %lu\n",SHM_VADDR_SEL4_Q);
+    pmsg = (char *)SHM_VADDR_SEL4_Q;
+    for (unsigned i = 0; i < sizeof(shmemComm_sel4q_msg); ++i) 
+        pmsg[i] =shmemComm_sel4q_msg[i];
+ 
     /* create/initialise the initial thread's ASID pool */
     it_ap_cap = create_it_asid_pool(root_cnode_cap);
     if (cap_get_capType(it_ap_cap) == cap_null_cap) {
@@ -646,15 +681,15 @@ static BOOT_CODE bool_t try_init_kernel(
 
     printf("Booting all finished, dropped to user space\n");
 
-    /* 初始化共享内存通信 */
-    init_shared_memory_kernel();
+    // /* 初始化共享内存通信 */
+    // init_shared_memory_kernel();
     
-    /* 测试共享内存通信功能 */
-    get_shared_memory_status();
-    test_shared_memory_communication();
-    /* 启动HyperAMP消息服务器 - 等待Root Linux消息 */
-    printf("Starting HyperAMP message server...\n");
-    hyperamp_server_main_loop(100);  // 处理最多10条消息
+    // /* 测试共享内存通信功能 */
+    // get_shared_memory_status();
+    // test_shared_memory_communication();
+    // /* 启动HyperAMP消息服务器 - 等待Root Linux消息 */
+    // printf("Starting HyperAMP message server...\n");
+    // hyperamp_server_main_loop(100);  // 处理最多10条消息
 
     return true;
 }
