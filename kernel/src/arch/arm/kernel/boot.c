@@ -556,6 +556,32 @@ static BOOT_CODE bool_t try_init_kernel(
     }
     ndks_boot.bi_frame->userImageFrames = create_frames_ret.region;
 
+    //20251112 increment
+    //variable definition
+    cap_t ShmemCommbuf_cap;
+    
+    vptr_t Shmem_vaddr=((extra_bi_frame_vptr+extra_bi_size_bits+4096*2)>>12)<<12;//页面对齐
+    // simulation setting
+    // rootserver.shmem_buf=((rootserver.extra_bi+extra_bi_size_bits+4096*1)>>12)<<12;//页面对齐 pptr
+    // real harware
+    rootserver.shmem_buf=(pptr_t)paddr_to_pptr(SHM_PADDR_DATA);//pptr
+
+    printf("boot.c Shmem paddr:0x %lx,vaddr 0x%lx\n",rootserver.shmem_buf,Shmem_vaddr);
+    printf("boot.c pv_offset 0x%lx\n",pv_offset);
+
+    //mapping
+    ShmemCommbuf_cap = create_ShmemCommbuf_frame_cap(root_cnode_cap, it_pd_cap, Shmem_vaddr);
+    if (cap_get_capType(ShmemCommbuf_cap) == cap_null_cap) {
+        printf("ERROR: could not create IPC buffer for initial thread\n");
+        return false;
+    }
+    //testing
+    char shmem_msg[] = "Hello, shmem comm";
+    const unsigned long shmemComm_msg_len = sizeof(shmem_msg);
+    char* it=(char*)rootserver.shmem_buf;
+    for (unsigned i = 0; i < shmemComm_msg_len; ++i) 
+        it[i] = shmem_msg[i];
+
     // DEPRECATED: 202510 increment
     // Following 202511 increment should work just fine without DEPRECATED code
 
@@ -580,29 +606,29 @@ static BOOT_CODE bool_t try_init_kernel(
     //store shm: DATA ROOT_Q SEL4_Q vaddrs in first available addr
     unsigned long long *addrMsg = (unsigned long long *)(rootserver.extra_bi + extra_bi_size);
     const unsigned long long shmemComm_frame_vaddrs[] = 
-            {SHM_VADDR_DATA,SHM_VADDR_ROOT_Q,SHM_VADDR_SEL4_Q};  
+            {Shmem_vaddr,SHM_VADDR_ROOT_Q,SHM_VADDR_SEL4_Q};  
     for (unsigned i = 0; i < 3; ++i) 
         addrMsg[i] = shmemComm_frame_vaddrs[i];  
     //store some strings in DATA ROOT_Q SEL4_Q vaddrs to verify correctness and functionality
-    const char shmemComm_data_msg[]="SHM_DATA";
-    const char shmemComm_rootq_msg[]="SHM_ROOT_Q";
-    const char shmemComm_sel4q_msg[]="SHM_SEL4_Q";
+    // const char shmemComm_data_msg[]="SHM_DATA";
+    // const char shmemComm_rootq_msg[]="SHM_ROOT_Q";
+    // const char shmemComm_sel4q_msg[]="SHM_SEL4_Q";
     printf("boot.c ShmemComm: SHM_PADDR_DATA 0x%lx\n",SHM_PADDR_DATA);   
-    printf("boot.c ShmemComm: SHM_VADDR_DATA %lu\n",SHM_VADDR_DATA);  
-    char *pmsg;  
-    pmsg = (char *)SHM_VADDR_DATA;
-    for (unsigned i = 0; i < sizeof(shmemComm_data_msg); ++i) 
-        pmsg[i] = shmemComm_data_msg[i];
+    printf("boot.c ShmemComm: SHM_VADDR_DATA 0x%lx\n",SHM_VADDR_DATA);  
+    // char *pmsg;  
+    // pmsg = (char *)SHM_VADDR_DATA;
+    // for (unsigned i = 0; i < sizeof(shmemComm_data_msg); ++i) 
+    //     pmsg[i] = shmemComm_data_msg[i];
     printf("boot.c ShmemComm: SHM_PADDR_ROOT_Q 0x%lx\n",SHM_PADDR_ROOT_Q);   
-    printf("boot.c ShmemComm: SHM_VADDR_ROOT_Q %lu\n",SHM_VADDR_ROOT_Q);
-    pmsg = (char *)SHM_VADDR_ROOT_Q;
-    for (unsigned i = 0; i < sizeof(shmemComm_rootq_msg); ++i) 
-        pmsg[i] = shmemComm_rootq_msg[i];
+    printf("boot.c ShmemComm: SHM_VADDR_ROOT_Q 0x%lx\n",SHM_VADDR_ROOT_Q);
+    // pmsg = (char *)SHM_VADDR_ROOT_Q;
+    // for (unsigned i = 0; i < sizeof(shmemComm_rootq_msg); ++i) 
+    //     pmsg[i] = shmemComm_rootq_msg[i];
     printf("boot.c ShmemComm: SHM_PADDR_SEL4_Q 0x%lx\n",SHM_PADDR_SEL4_Q);   
-    printf("boot.c ShmemComm: SHM_VADDR_SEL4_Q %lu\n",SHM_VADDR_SEL4_Q);
-    pmsg = (char *)SHM_VADDR_SEL4_Q;
-    for (unsigned i = 0; i < sizeof(shmemComm_sel4q_msg); ++i) 
-        pmsg[i] =shmemComm_sel4q_msg[i];
+    printf("boot.c ShmemComm: SHM_VADDR_SEL4_Q 0x%lx\n",SHM_VADDR_SEL4_Q);
+    // pmsg = (char *)SHM_VADDR_SEL4_Q;
+    // for (unsigned i = 0; i < sizeof(shmemComm_sel4q_msg); ++i) 
+    //     pmsg[i] =shmemComm_sel4q_msg[i];
  
     /* create/initialise the initial thread's ASID pool */
     it_ap_cap = create_it_asid_pool(root_cnode_cap);
