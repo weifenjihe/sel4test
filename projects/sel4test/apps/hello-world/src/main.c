@@ -48,7 +48,7 @@ int main(void) {
     printf("  ROOT_Q VADDR: 0x%llx\n", vaddrs[1]);
     printf("  SEL4_Q VADDR: 0x%llx\n", vaddrs[2]);
     printf("--------------------------------------------\n");
-    printString((char*)(vaddrs[0]));
+    printString((char*)(0x53f000));
     while (1)
     {
         /* code */

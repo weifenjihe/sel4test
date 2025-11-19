@@ -29,7 +29,8 @@ enum seL4_RootCNodeCapSlots {
     seL4_CapInitThreadSC        = 14, /* initial thread's scheduling context cap, null cap if not supported */
     seL4_CapSMC                 = 15, /* global SMC cap, null cap if not supported */
     seL4_NumInitialCaps         = 16,
-    seL4_CapInitThreadShememBuffer = 17/* initial thread's IPC buffer frame cap */   
+    seL4_CapInitThreadShm_root_q = 17,/* initial thread's IPC buffer frame cap */   
+    seL4_CapInitThreadShm_sel4_q = 18/* initial thread's IPC buffer frame cap */   
 };
 
 /* Legacy code will have assumptions on the vspace root being a Page Directory

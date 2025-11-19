@@ -56,7 +56,7 @@ void bi_finalise(void);
 void create_domain_cap(cap_t root_cnode_cap);
 
 cap_t create_ipcbuf_frame_cap(cap_t root_cnode_cap, cap_t pd_cap, vptr_t vptr);
-cap_t create_ShmemCommbuf_frame_cap(cap_t root_cnode_cap, cap_t pd_cap, vptr_t vptr);
+cap_t create_ShmemCommbuf_frame_cap(cap_t root_cnode_cap, cap_t pd_cap, vptr_t vptr,pptr_t pptr,uint32_t cap_slot);
 word_t calculate_extra_bi_size_bits(word_t extra_size);
 void populate_bi_frame(node_id_t node_id, word_t num_nodes, vptr_t ipcbuf_vptr,
                        word_t extra_bi_size);
@@ -106,7 +106,9 @@ typedef struct {
     pptr_t vspace;
     pptr_t asid_pool;
     pptr_t ipc_buf;
-    pptr_t shmem_buf;
+    pptr_t shm_root_queue;
+    pptr_t shm_sel4_queue;
+    pptr_t shm_data;
     pptr_t boot_info;
     pptr_t extra_bi;
     pptr_t tcb;

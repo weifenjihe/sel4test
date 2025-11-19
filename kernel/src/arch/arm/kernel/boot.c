@@ -558,46 +558,59 @@ static BOOT_CODE bool_t try_init_kernel(
 
     //20251112 increment
     //variable definition
-    cap_t ShmemCommbuf_cap;
-    
-    vptr_t Shmem_vaddr=((extra_bi_frame_vptr+extra_bi_size_bits+4096*2)>>12)<<12;//页面对齐
-    // simulation setting
-    // rootserver.shmem_buf=((rootserver.extra_bi+extra_bi_size_bits+4096*1)>>12)<<12;//页面对齐 pptr
+    cap_t shm_sel4_queue_cap,shm_root_queue_cap;
+    vptr_t shm_root_queue_vaddr=((extra_bi_frame_vptr+extra_bi_size_bits+BIT(PAGE_BITS)*2)>>PAGE_BITS)<<PAGE_BITS;//页面对齐
+    vptr_t shm_sel4_queue_vaddr=shm_root_queue_vaddr+BIT(PAGE_BITS);//页面对齐
+    // vptr_t shm_data_vaddr=shm_sel4_queue_vaddr+BIT(PAGE_BITS);//页面对齐
+    // vptr_t shm_data_vaddr;//页面对齐
+
     // real harware
-    rootserver.shmem_buf=(pptr_t)paddr_to_pptr(SHM_PADDR_DATA);//pptr
-
-    printf("boot.c Shmem paddr:0x %lx,vaddr 0x%lx\n",rootserver.shmem_buf,Shmem_vaddr);
+    rootserver.shm_root_queue=(pptr_t)paddr_to_pptr(SHM_PADDR_ROOT_Q);//pptr
+    rootserver.shm_sel4_queue=(pptr_t)paddr_to_pptr(SHM_PADDR_SEL4_Q);//pptr
+    // simulation setting
+    // rootserver.shm_sel4_queue=((rootserver.extra_bi+extra_bi_size_bits+4096*1)>>12)<<12;//页面对齐 pptr
+        
+    shm_root_queue_cap = create_ShmemCommbuf_frame_cap(root_cnode_cap, it_pd_cap, shm_root_queue_vaddr,rootserver.shm_root_queue,seL4_CapInitThreadShm_root_q);
+    if (cap_get_capType(shm_root_queue_cap) == cap_null_cap) {
+        printf("ERROR: could not create root_queue buffer for initial thread\n");
+        return false;
+    }
+    shm_sel4_queue_cap = create_ShmemCommbuf_frame_cap(root_cnode_cap, it_pd_cap, shm_sel4_queue_vaddr,rootserver.shm_sel4_queue,seL4_CapInitThreadShm_sel4_q);
+    if (cap_get_capType(shm_sel4_queue_cap) == cap_null_cap) {
+        printf("ERROR: could not create sel4_queue buffer for initial thread\n");
+        return false;
+    }
+    printf("boot.c Shmem paddr:0x %lx,vaddr 0x%lx\n",rootserver.shm_data,shm_sel4_queue_vaddr);
     printf("boot.c pv_offset 0x%lx\n",pv_offset);
-
-    //mapping
-    ShmemCommbuf_cap = create_ShmemCommbuf_frame_cap(root_cnode_cap, it_pd_cap, Shmem_vaddr);
-    if (cap_get_capType(ShmemCommbuf_cap) == cap_null_cap) {
-        printf("ERROR: could not create IPC buffer for initial thread\n");
+    printf("root and sel4 queue mapped, mapping 4MB data\n");
+    //map 4MB
+    p_region_t shm_data_p_reg = (p_region_t) {
+        SHM_PADDR_DATA, SHM_PADDR_DATA+SHM_SIZE_DATA
+    };
+    region_t shm_data_reg = paddr_to_pptr_reg(shm_data_p_reg);
+    v_region_t shm_data_v_reg = {
+        .start = shm_data_p_reg.start - pv_offset,
+        .end   = shm_data_p_reg.end   - pv_offset
+    };
+    /* create all userland image frames */
+    create_frames_ret =
+        create_frames_of_region(
+            root_cnode_cap,
+            it_pd_cap,
+            shm_data_reg,
+            true,
+            pv_offset
+        );
+    if (!create_frames_ret.success) {
+        printf("ERROR: could not create all userland image frames\n");
         return false;
     }
     //testing
     char shmem_msg[] = "Hello, shmem comm";
     const unsigned long shmemComm_msg_len = sizeof(shmem_msg);
-    char* it=(char*)rootserver.shmem_buf;
+    char* it=(char*)rootserver.shm_sel4_queue;
     for (unsigned i = 0; i < shmemComm_msg_len; ++i) 
         it[i] = shmem_msg[i];
-
-    // DEPRECATED: 202510 increment
-    // Following 202511 increment should work just fine without DEPRECATED code
-
-    // vptr_t shmemComm_frame_vptr;
-    // seL4_Word *pShmemBuf=(seL4_Word*)rootserver.ipc_buf;
-    // const char shmemComm_initial_msg[] = "ShmemComm: Foundation for Shared-Memory Communication Between VMs"; 
-    // const unsigned long shmemComm_initial_msg_len = sizeof(shmemComm_initial_msg);
-    // char *pmsg = (char *)(rootserver.extra_bi + extra_bi_size);
-    // shmemComm_frame_vptr=extra_bi_frame_vptr+extra_bi_size;
-    // printf("bi_frame_vptr %lx\n",bi_frame_vptr);
-    // printf("ipcbuf_vptr %lx\n",ipcbuf_vptr);
-    // printf("shmemComm_frame_vptr %lx\n",shmemComm_frame_vptr);
-    // printf("shmemComm_frame_pptr %lx\n",rootserver.extra_bi + extra_bi_size);
-    // *pShmemBuf=(seL4_Word)shmemComm_frame_vptr;
-    // for (unsigned i = 0; i < shmemComm_initial_msg_len; ++i) 
-    //     pmsg[i] = shmemComm_initial_msg[i];
 
     //202511 increment    
     //store the first available vaddr in ipc buffer
@@ -606,30 +619,9 @@ static BOOT_CODE bool_t try_init_kernel(
     //store shm: DATA ROOT_Q SEL4_Q vaddrs in first available addr
     unsigned long long *addrMsg = (unsigned long long *)(rootserver.extra_bi + extra_bi_size);
     const unsigned long long shmemComm_frame_vaddrs[] = 
-            {Shmem_vaddr,SHM_VADDR_ROOT_Q,SHM_VADDR_SEL4_Q};  
+            {shm_sel4_queue_vaddr,shm_sel4_queue_vaddr,shm_data_v_reg.start};  
     for (unsigned i = 0; i < 3; ++i) 
         addrMsg[i] = shmemComm_frame_vaddrs[i];  
-    //store some strings in DATA ROOT_Q SEL4_Q vaddrs to verify correctness and functionality
-    // const char shmemComm_data_msg[]="SHM_DATA";
-    // const char shmemComm_rootq_msg[]="SHM_ROOT_Q";
-    // const char shmemComm_sel4q_msg[]="SHM_SEL4_Q";
-    printf("boot.c ShmemComm: SHM_PADDR_DATA 0x%lx\n",SHM_PADDR_DATA);   
-    printf("boot.c ShmemComm: SHM_VADDR_DATA 0x%lx\n",SHM_VADDR_DATA);  
-    // char *pmsg;  
-    // pmsg = (char *)SHM_VADDR_DATA;
-    // for (unsigned i = 0; i < sizeof(shmemComm_data_msg); ++i) 
-    //     pmsg[i] = shmemComm_data_msg[i];
-    printf("boot.c ShmemComm: SHM_PADDR_ROOT_Q 0x%lx\n",SHM_PADDR_ROOT_Q);   
-    printf("boot.c ShmemComm: SHM_VADDR_ROOT_Q 0x%lx\n",SHM_VADDR_ROOT_Q);
-    // pmsg = (char *)SHM_VADDR_ROOT_Q;
-    // for (unsigned i = 0; i < sizeof(shmemComm_rootq_msg); ++i) 
-    //     pmsg[i] = shmemComm_rootq_msg[i];
-    printf("boot.c ShmemComm: SHM_PADDR_SEL4_Q 0x%lx\n",SHM_PADDR_SEL4_Q);   
-    printf("boot.c ShmemComm: SHM_VADDR_SEL4_Q 0x%lx\n",SHM_VADDR_SEL4_Q);
-    // pmsg = (char *)SHM_VADDR_SEL4_Q;
-    // for (unsigned i = 0; i < sizeof(shmemComm_sel4q_msg); ++i) 
-    //     pmsg[i] =shmemComm_sel4q_msg[i];
- 
     /* create/initialise the initial thread's ASID pool */
     it_ap_cap = create_it_asid_pool(root_cnode_cap);
     if (cap_get_capType(it_ap_cap) == cap_null_cap) {

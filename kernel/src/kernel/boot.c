@@ -319,13 +319,13 @@ BOOT_CODE cap_t create_ipcbuf_frame_cap(cap_t root_cnode_cap, cap_t pd_cap, vptr
 
     return cap;
 }
-BOOT_CODE cap_t create_ShmemCommbuf_frame_cap(cap_t root_cnode_cap, cap_t pd_cap, vptr_t vptr)
+BOOT_CODE cap_t create_ShmemCommbuf_frame_cap(cap_t root_cnode_cap, cap_t pd_cap, vptr_t vptr,pptr_t pptr,uint32_t cap_slot)
 {
-    // clearMemory((void *)rootserver.ipc_buf, PAGE_BITS);
+    // clearMemory((void *)pptr, PAGE_BITS);
 
     /* create a cap of it and write it into the root CNode */
-    cap_t cap = create_mapped_it_frame_cap(pd_cap, rootserver.shmem_buf, vptr, IT_ASID, false, false);
-    write_slot(SLOT_PTR(pptr_of_cap(root_cnode_cap), seL4_CapInitThreadShememBuffer), cap);
+    cap_t cap = create_mapped_it_frame_cap(pd_cap, pptr, vptr, IT_ASID, false, false);
+    write_slot(SLOT_PTR(pptr_of_cap(root_cnode_cap), cap_slot), cap);
 
     return cap;
 }
