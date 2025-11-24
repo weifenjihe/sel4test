@@ -334,6 +334,8 @@ BOOT_CODE static void release_secondary_cpus(void)
 }
 #endif /* ENABLE_SMP_SUPPORT */
 
+
+
 /* Main kernel initialisation function. */
 
 static BOOT_CODE bool_t try_init_kernel(
@@ -370,7 +372,6 @@ static BOOT_CODE bool_t try_init_kernel(
     ipcbuf_vptr = ui_v_reg.end;
     bi_frame_vptr = ipcbuf_vptr + BIT(PAGE_BITS);
     extra_bi_frame_vptr = bi_frame_vptr + BIT(seL4_BootInfoFrameBits);
-
     /* setup virtual memory for the kernel */
     map_kernel_window();
 
@@ -421,7 +422,7 @@ static BOOT_CODE bool_t try_init_kernel(
     word_t extra_bi_size_bits = calculate_extra_bi_size_bits(extra_bi_size);
     v_region_t it_v_reg = {
         .start = ui_v_reg.start,
-        .end   = extra_bi_frame_vptr + (extra_bi_size_bits > 0 ? BIT(extra_bi_size_bits) : 0)
+        .end   = extra_bi_frame_vptr + (extra_bi_size_bits > 0 ? BIT(extra_bi_size_bits) : 0)+SHM_SIZE_DATA+BIT(PAGE_BITS)
     };
     if (it_v_reg.end >= USER_TOP) {
         /* Variable arguments for printf() require well defined integer types to
@@ -584,27 +585,27 @@ static BOOT_CODE bool_t try_init_kernel(
     printf("boot.c pv_offset 0x%lx\n",pv_offset);
     printf("root and sel4 queue mapped, mapping 4MB data\n");
     //map 4MB
+    // map_shm_region(pv_offset);
     p_region_t shm_data_p_reg = (p_region_t) {
         SHM_PADDR_DATA, SHM_PADDR_DATA+SHM_SIZE_DATA
     };
     region_t shm_data_reg = paddr_to_pptr_reg(shm_data_p_reg);
+    // v_region_t shm_data_v_reg = {
+    //     .start = shm_data_p_reg.start - pv_offset,
+    //     .end   = shm_data_p_reg.end   - pv_offset
+    // };
     v_region_t shm_data_v_reg = {
-        .start = shm_data_p_reg.start - pv_offset,
-        .end   = shm_data_p_reg.end   - pv_offset
+        .start = shm_sel4_queue_vaddr+BIT(PAGE_BITS),
+        .end   = shm_sel4_queue_vaddr+BIT(PAGE_BITS)+SHM_SIZE_DATA
     };
-    /* create all userland image frames */
-    create_frames_ret =
-        create_frames_of_region(
-            root_cnode_cap,
-            it_pd_cap,
-            shm_data_reg,
-            true,
-            pv_offset
-        );
-    if (!create_frames_ret.success) {
-        printf("ERROR: could not create all userland image frames\n");
-        return false;
-    }
+    printf("data pptr %lx vaddr %lx\n",shm_data_reg.start,shm_data_v_reg.start);
+    map_4MB_phys_to_vaddr((vspace_root_t *)rootserver.vspace,SHM_PADDR_DATA,shm_sel4_queue_vaddr+BIT(PAGE_BITS),0);
+    // map_4MB_phys_to_vaddr(vspace_root_t *vspaceRoot,
+    //                        paddr_t phys_start,
+    //                        vptr_t vaddr_start,
+    //                        bool_t executable)
+    printf("data pptr %lx vaddr %lx\n",shm_data_reg.start,shm_data_v_reg.start);
+
     //testing
     char shmem_msg[] = "Hello, shmem comm";
     const unsigned long shmemComm_msg_len = sizeof(shmem_msg);

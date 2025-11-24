@@ -296,7 +296,64 @@ BOOT_CODE void map_kernel_window(void)
 
     map_kernel_devices();
 }
+#define FOUR_MB (4 * 1024 * 1024UL)
+#define NUM_4K_PAGES (FOUR_MB / BIT(seL4_PageBits))
+static BOOT_CODE void map_4MB_phys_to_vaddr(vspace_root_t *vspaceRoot,
+                           paddr_t phys_start,
+                           vptr_t vaddr_start,
+                           bool_t executable)
+{
+    vptr_t vptr;
+    paddr_t cur_paddr;
+    pte_t *pud;
+    pte_t *pd;
+    pte_t *pt;
 
+    for (unsigned i = 0; i < NUM_4K_PAGES; ++i) {
+        vptr = vaddr_start + (i * BIT(seL4_PageBits));
+        cur_paddr = phys_start + (i * BIT(seL4_PageBits));
+
+#ifdef AARCH64_VSPACE_S2_START_L1
+        /* L1 as vspaceRoot */
+        pud = vspaceRoot;
+#else
+        /* 与你给的代码保持一致：计算 top-level entry */
+        pud = vspaceRoot + GET_UPT_INDEX(vptr, ULVL_FRM_ARM_PT_LVL(0));
+        assert(pte_pte_table_ptr_get_present(vspaceRoot));
+        pud = paddr_to_pptr(pte_pte_table_ptr_get_pt_base_address(vspaceRoot));
+#endif
+
+        /* 进入下一级 PUD（或 L2） */
+        pud += GET_UPT_INDEX(vptr, ULVL_FRM_ARM_PT_LVL(1));
+        assert(pte_pte_table_ptr_get_present(pud));
+        pd = paddr_to_pptr(pte_pte_table_ptr_get_pt_base_address(pud));
+
+        /* 进入 PD（或 L3） */
+        pd += GET_UPT_INDEX(vptr, ULVL_FRM_ARM_PT_LVL(2));
+        assert(pte_pte_table_ptr_get_present(pd));
+        pt = paddr_to_pptr(pte_pte_table_ptr_get_pt_base_address(pd));
+
+        /* 在 PT 中写入 4KB 页表项 */
+        pt += GET_UPT_INDEX(vptr, ULVL_FRM_ARM_PT_LVL(3));
+        *(pt) = pte_pte_4k_page_new(
+                      !executable,                    /* unprivileged execute never (XN) */
+                      cur_paddr,                      /* page_base_address: 使用物理地址 */
+#ifdef CONFIG_ARM_HYPERVISOR_SUPPORT
+                      0,                              /* global? (S2 path) */
+#else
+                      1,                              /* not global */
+#endif
+                      1,                              /* access flag */
+                      SMP_TERNARY(SMP_SHARE, 0),      /* sharable if SMP */
+                      APFromVMRights(VMReadWrite),    /* R/W */
+#ifdef CONFIG_ARM_HYPERVISOR_SUPPORT
+                      S2_NORMAL
+#else
+                      NORMAL
+#endif
+                  );
+    }
+}
 /* When the hypervisor support is enabled, the stage-2 translation table format
  * is used for applications.
  * The global bit is always 0.
