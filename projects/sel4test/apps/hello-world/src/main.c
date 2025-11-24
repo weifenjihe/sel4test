@@ -44,10 +44,30 @@ int main(void) {
     
     // 打印三个共享内存区域的虚拟地址
     printf("Shmem Comm VAddrs:\n");
-    printf("  DATA VADDR: 0x%llx\n", vaddrs[0]);
-    printf("  ROOT_Q VADDR: 0x%llx\n", vaddrs[1]);
-    printf("  SEL4_Q VADDR: 0x%llx\n", vaddrs[2]);
+    printf("  ROOT_Q VADDR: 0x%llx\n", vaddrs[0]);   // [0] = ROOT_Q
+    printf("  SEL4_Q VADDR: 0x%llx\n", vaddrs[1]);   // [1] = SEL4_Q
+    printf("  DATA VADDR: 0x%llx\n", vaddrs[2]);     // [2] = DATA
     printf("--------------------------------------------\n");
+     // === 新增：边界访问测试（只测合法范围，避免 crash）===
+    volatile char *root_q = (char*)vaddrs[0];
+    volatile char *sel4_q = (char*)vaddrs[1];
+    volatile char *data   = (char*)vaddrs[2];
+
+    // 测试 ROOT_Q: 4KB → offset 0 和 4095
+    root_q[0] = 'R';
+    root_q[4095] = 'r';
+    printf("ROOT_Q boundary test: OK\n");
+
+    // 测试 SEL4_Q: 4KB → offset 0 和 4095
+    sel4_q[0] = 'S';
+    sel4_q[4095] = 's';
+    printf("SEL4_Q boundary test: OK\n");
+
+    // 测试 DATA: 4MB → offset 0 和 0x3FFFFF (4MB - 1)
+    data[0] = 'D';
+    data[0x3FFFFF] = 'd';  // 4MB - 1 = 0x400000 - 1 = 0x3FFFFF
+    printf("DATA boundary test: OK\n");
+    // === 边界测试结束 ===
     printString((char*)(0x53f000));
     while (1)
     {

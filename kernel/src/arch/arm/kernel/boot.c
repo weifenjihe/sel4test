@@ -620,7 +620,7 @@ static BOOT_CODE bool_t try_init_kernel(
     //store shm: DATA ROOT_Q SEL4_Q vaddrs in first available addr
     unsigned long long *addrMsg = (unsigned long long *)(rootserver.extra_bi + extra_bi_size);
     const unsigned long long shmemComm_frame_vaddrs[] = 
-            {shm_sel4_queue_vaddr,shm_sel4_queue_vaddr,shm_data_v_reg.start};  
+            {shm_root_queue_vaddr,shm_sel4_queue_vaddr,shm_data_v_reg.start};  
     for (unsigned i = 0; i < 3; ++i) 
         addrMsg[i] = shmemComm_frame_vaddrs[i];  
     /* create/initialise the initial thread's ASID pool */
