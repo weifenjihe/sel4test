@@ -852,7 +852,7 @@ void hyperamp_server_main_loop(int max_messages)
         // 定期显示监控状态（不要太频繁）
         if (!found_valid_message) {
             status_report_counter++;
-            if (status_report_counter >= 600000) {  // 大幅增加间隔，减少噪音日志
+            if (status_report_counter >= 6000000) {  // 大幅增加间隔，减少噪音日志
                 printf("[seL4] Monitoring... (processed: %d messages, checks: %d, queue_head: %u)\n", 
                        g_message_count, g_check_counter, g_root_q_vaddr->proc_ing_h);
                 status_report_counter = 0;
