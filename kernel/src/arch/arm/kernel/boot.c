@@ -422,7 +422,7 @@ static BOOT_CODE bool_t try_init_kernel(
     word_t extra_bi_size_bits = calculate_extra_bi_size_bits(extra_bi_size);
     v_region_t it_v_reg = {
         .start = ui_v_reg.start,
-        .end   = extra_bi_frame_vptr + (extra_bi_size_bits > 0 ? BIT(extra_bi_size_bits) : 0)+SHM_SIZE_DATA+BIT(PAGE_BITS)
+        .end   = extra_bi_frame_vptr + (extra_bi_size_bits > 0 ? BIT(extra_bi_size_bits) : 0)+SHM_DATA_SIZE+BIT(PAGE_BITS)
     };
     if (it_v_reg.end >= USER_TOP) {
         /* Variable arguments for printf() require well defined integer types to
@@ -557,70 +557,89 @@ static BOOT_CODE bool_t try_init_kernel(
     }
     ndks_boot.bi_frame->userImageFrames = create_frames_ret.region;
 
-    //20251112 increment
+    //20251209 - HyperAMP 4KB 队列优化 (从 64KB 减小到 4KB, 125 entries)
     //variable definition
-    cap_t shm_sel4_queue_cap,shm_root_queue_cap;
-    vptr_t shm_root_queue_vaddr=((extra_bi_frame_vptr+extra_bi_size_bits+BIT(PAGE_BITS)*2)>>PAGE_BITS)<<PAGE_BITS;//页面对齐
-    vptr_t shm_sel4_queue_vaddr=shm_root_queue_vaddr+BIT(PAGE_BITS);//页面对齐
-    // vptr_t shm_data_vaddr=shm_sel4_queue_vaddr+BIT(PAGE_BITS);//页面对齐
-    // vptr_t shm_data_vaddr;//页面对齐
+    cap_t shm_tx_queue_cap, shm_rx_queue_cap;
+    
+    // 计算虚拟地址 (页面对齐) - 使用原始计算方式
+    vptr_t shm_tx_queue_vaddr = ((extra_bi_frame_vptr + extra_bi_size_bits + BIT(PAGE_BITS) * 2) >> PAGE_BITS) << PAGE_BITS;
+    vptr_t shm_rx_queue_vaddr = shm_tx_queue_vaddr + BIT(PAGE_BITS);  // TX 队列后 4KB (1页)
+    vptr_t shm_data_vaddr = shm_rx_queue_vaddr + BIT(PAGE_BITS);      // RX 队列后 4KB (1页)
 
-    // real harware
-    rootserver.shm_root_queue=(pptr_t)paddr_to_pptr(SHM_PADDR_ROOT_Q);//pptr
-    rootserver.shm_sel4_queue=(pptr_t)paddr_to_pptr(SHM_PADDR_SEL4_Q);//pptr
-    // simulation setting
-    // rootserver.shm_sel4_queue=((rootserver.extra_bi+extra_bi_size_bits+4096*1)>>12)<<12;//页面对齐 pptr
+    // HyperAMP 4KB 队列布局 (HYPERAMP_MAX_MAP_TABLE_ENTRIES=125):
+    // TX Queue (Linux → seL4): phys 0xDE000000, virt shm_tx_queue_vaddr, size 4KB
+    // RX Queue (seL4 → Linux): phys 0xDE001000, virt shm_rx_queue_vaddr, size 4KB
+    // Data Region:             phys 0xDE002000, virt shm_data_vaddr,      size 4MB
+    
+    rootserver.shm_root_queue = (pptr_t)paddr_to_pptr(SHM_TX_QUEUE_PADDR);  // TX Queue
+    rootserver.shm_sel4_queue = (pptr_t)paddr_to_pptr(SHM_RX_QUEUE_PADDR);  // RX Queue
         
-    shm_root_queue_cap = create_ShmemCommbuf_frame_cap(root_cnode_cap, it_pd_cap, shm_root_queue_vaddr,rootserver.shm_root_queue,seL4_CapInitThreadShm_root_q);
-    if (cap_get_capType(shm_root_queue_cap) == cap_null_cap) {
-        printf("ERROR: could not create root_queue buffer for initial thread\n");
+    // 创建 TX Queue 映射 (Linux → seL4, 4KB)
+    shm_tx_queue_cap = create_ShmemCommbuf_frame_cap(root_cnode_cap, it_pd_cap, 
+                                                      shm_tx_queue_vaddr,
+                                                      rootserver.shm_root_queue,
+                                                      seL4_CapInitThreadShm_root_q);
+    if (cap_get_capType(shm_tx_queue_cap) == cap_null_cap) {
+        printf("ERROR: could not create TX queue (4KB) for initial thread\n");
         return false;
     }
-    shm_sel4_queue_cap = create_ShmemCommbuf_frame_cap(root_cnode_cap, it_pd_cap, shm_sel4_queue_vaddr,rootserver.shm_sel4_queue,seL4_CapInitThreadShm_sel4_q);
-    if (cap_get_capType(shm_sel4_queue_cap) == cap_null_cap) {
-        printf("ERROR: could not create sel4_queue buffer for initial thread\n");
+    
+    // 创建 RX Queue 映射 (seL4 → Linux, 4KB)
+    shm_rx_queue_cap = create_ShmemCommbuf_frame_cap(root_cnode_cap, it_pd_cap, 
+                                                      shm_rx_queue_vaddr,
+                                                      rootserver.shm_sel4_queue,
+                                                      seL4_CapInitThreadShm_sel4_q);
+    if (cap_get_capType(shm_rx_queue_cap) == cap_null_cap) {
+        printf("ERROR: could not create RX queue (4KB) for initial thread\n");
         return false;
     }
-    printf("boot.c Shmem paddr:0x %lx,vaddr 0x%lx\n",rootserver.shm_data,shm_sel4_queue_vaddr);
-    printf("boot.c pv_offset 0x%lx\n",pv_offset);
-    printf("root and sel4 queue mapped, mapping 4MB data\n");
-    //map 4MB
-    // map_shm_region(pv_offset);
+    
+    printf("boot.c HyperAMP 4KB Queue Layout:\n");
+    printf("  extra_bi_frame_vptr: 0x%lx\n", extra_bi_frame_vptr);
+    printf("  extra_bi_size_bits: %lu (0x%lx)\n", extra_bi_size_bits, extra_bi_size_bits);
+    printf("  BIT(PAGE_BITS): %lu\n", BIT(PAGE_BITS));
+    printf("  Calculation: (0x%lx + %lu + %lu*2) >> 12 << 12\n", 
+           extra_bi_frame_vptr, extra_bi_size_bits, BIT(PAGE_BITS));
+    printf("  TX Queue: paddr=0x%lx, vaddr=0x%lx, size=%d bytes\n", 
+           SHM_TX_QUEUE_PADDR, shm_tx_queue_vaddr, SHM_QUEUE_SIZE);
+    printf("  RX Queue: paddr=0x%lx, vaddr=0x%lx, size=%d bytes\n", 
+           SHM_RX_QUEUE_PADDR, shm_rx_queue_vaddr, SHM_QUEUE_SIZE);
+    printf("  Data Reg: paddr=0x%lx, vaddr=0x%lx, size=%d MB\n", 
+           SHM_DATA_PADDR, shm_data_vaddr, SHM_DATA_SIZE / (1024 * 1024));
+    printf("boot.c pv_offset 0x%lx\n", pv_offset);
+    printf("TX and RX queue mapped, mapping 4MB data region\n");
+    
+    // 映射 4MB 数据区 (保持原有实现)
     p_region_t shm_data_p_reg = (p_region_t) {
-        SHM_PADDR_DATA, SHM_PADDR_DATA+SHM_SIZE_DATA
+        SHM_DATA_PADDR, SHM_DATA_PADDR + SHM_DATA_SIZE
     };
     region_t shm_data_reg = paddr_to_pptr_reg(shm_data_p_reg);
-    // v_region_t shm_data_v_reg = {
-    //     .start = shm_data_p_reg.start - pv_offset,
-    //     .end   = shm_data_p_reg.end   - pv_offset
-    // };
+    
     v_region_t shm_data_v_reg = {
-        .start = shm_sel4_queue_vaddr+BIT(PAGE_BITS),
-        .end   = shm_sel4_queue_vaddr+BIT(PAGE_BITS)+SHM_SIZE_DATA
+        .start = shm_data_vaddr,
+        .end   = shm_data_vaddr + SHM_DATA_SIZE
     };
-    printf("data pptr %lx vaddr %lx\n",shm_data_reg.start,shm_data_v_reg.start);
-    map_4MB_phys_to_vaddr((vspace_root_t *)rootserver.vspace,SHM_PADDR_DATA,shm_sel4_queue_vaddr+BIT(PAGE_BITS),0);
-    // map_4MB_phys_to_vaddr(vspace_root_t *vspaceRoot,
-    //                        paddr_t phys_start,
-    //                        vptr_t vaddr_start,
-    //                        bool_t executable)
-    printf("data pptr %lx vaddr %lx\n",shm_data_reg.start,shm_data_v_reg.start);
+    
+    printf("data pptr 0x%lx vaddr 0x%lx\n", shm_data_reg.start, shm_data_v_reg.start);
+    map_4MB_phys_to_vaddr((vspace_root_t *)rootserver.vspace, SHM_DATA_PADDR, shm_data_vaddr, 0);
+    printf("data pptr 0x%lx vaddr 0x%lx\n", shm_data_reg.start, shm_data_v_reg.start);
 
-    //testing
-    char shmem_msg[] = "Hello, shmem comm";
+    // 测试
+    char shmem_msg[] = "Hello, New HyperAMP!";
     const unsigned long shmemComm_msg_len = sizeof(shmem_msg);
-    char* it=(char*)rootserver.shm_sel4_queue;
+    char* it = (char*)rootserver.shm_sel4_queue;
     for (unsigned i = 0; i < shmemComm_msg_len; ++i) 
         it[i] = shmem_msg[i];
 
-    //202511 increment    
-    //store the first available vaddr in ipc buffer
-    seL4_Word *ipcBuf=(seL4_Word*)rootserver.ipc_buf;
-    *ipcBuf=(seL4_Word)(extra_bi_frame_vptr+extra_bi_size);
-    //store shm: DATA ROOT_Q SEL4_Q vaddrs in first available addr
+    // 将共享内存虚拟地址传递给用户空间（与之前实现相同）
+    // store the first available vaddr in ipc buffer
+    seL4_Word *ipcBuf = (seL4_Word*)rootserver.ipc_buf;
+    *ipcBuf = (seL4_Word)(extra_bi_frame_vptr + extra_bi_size);
+    
+    // store shm: TX_Q RX_Q DATA vaddrs in first available addr
     unsigned long long *addrMsg = (unsigned long long *)(rootserver.extra_bi + extra_bi_size);
     const unsigned long long shmemComm_frame_vaddrs[] = 
-            {shm_root_queue_vaddr,shm_sel4_queue_vaddr,shm_data_v_reg.start};  
+            {shm_tx_queue_vaddr, shm_rx_queue_vaddr, shm_data_vaddr};  
     for (unsigned i = 0; i < 3; ++i) 
         addrMsg[i] = shmemComm_frame_vaddrs[i];  
     /* create/initialise the initial thread's ASID pool */
