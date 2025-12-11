@@ -97,6 +97,9 @@ static inline void hyperamp_spinlock_init(volatile HyperampSpinlock *lock)
         p[i] = 0;
     }
     HYPERAMP_BARRIER();
+    
+    /* 刷新锁状态到主存 */
+    hyperamp_cache_clean((volatile void *)lock, sizeof(HyperampSpinlock));
 }
 
 static inline void hyperamp_spinlock_lock(volatile HyperampSpinlock *lock, uint32_t zone_id)
@@ -120,6 +123,9 @@ static inline void hyperamp_spinlock_lock(volatile HyperampSpinlock *lock, uint3
                 lock->owner_zone_id = zone_id;
                 lock->lock_count++;
                 HYPERAMP_BARRIER();
+                
+                /* 刷新锁状态到主存，确保其他核心/虚拟机能看到锁已被占用 */
+                hyperamp_cache_clean((volatile void *)lock, sizeof(HyperampSpinlock));
                 return;
             }
         }
@@ -150,6 +156,9 @@ static inline void hyperamp_spinlock_unlock(volatile HyperampSpinlock *lock)
     lock->owner_zone_id = 0;
     lock->lock_value = 0;
     HYPERAMP_BARRIER();
+    
+    /* 关键：刷新锁状态到主存，确保其他核心/虚拟机能看到锁已释放 */
+    hyperamp_cache_clean((volatile void *)lock, sizeof(HyperampSpinlock));
 }
 
 /* ==================== 地址映射表项 ==================== */
@@ -298,7 +307,13 @@ static inline int hyperamp_queue_is_initialized(volatile HyperampShmQueue *queue
 }
 
 /**
- * @brief 入队操作
+ * @brief 向共享内存队列中入队数据
+ * @param queue 输入/输出：共享内存队列控制结构指针（函数内部会更新 header 和 enqueue_count）
+ * @param zone_id 输入：当前调用者的区域ID（用于获取自旋锁）
+ * @param data 输入：源数据缓冲区，包含要写入队列的数据
+ * @param data_len 输入：要写入的数据字节数（必须小于等于队列的 block_size）
+ * @param virt_base 输入：共享内存数据区的起始虚拟地址（用于计算写入偏移）
+ * @return HYPERAMP_OK 成功, HYPERAMP_ERROR 失败（参数无效、数据过长或队列已满）
  */
 static inline int hyperamp_queue_enqueue(volatile HyperampShmQueue *queue,
                                           uint32_t zone_id,
@@ -367,8 +382,16 @@ static inline int hyperamp_queue_enqueue(volatile HyperampShmQueue *queue,
 }
 
 /**
- * @brief 出队操作
+ * @brief 从共享内存队列中出队数据
+ * @param queue 输入/输出：共享内存队列控制结构指针（函数内部会更新 tail 和 dequeue_count）
+ * @param zone_id 输入：当前调用者的区域ID（用于获取自旋锁）
+ * @param data 输出：目标缓冲区，用于存放从队列读取的数据
+ * @param max_len 输入：目标缓冲区的最大容量（防止溢出）
+ * @param actual_len 输出：实际读取到的数据字节数（如果不需要可传 NULL）
+ * @param virt_base 输入：共享内存数据区的起始虚拟地址（用于计算读取偏移）
+ * @return HYPERAMP_OK 成功, HYPERAMP_ERROR 失败（参数无效或队列为空）
  */
+ 
 static inline int hyperamp_queue_dequeue(volatile HyperampShmQueue *queue,
                                           uint32_t zone_id,
                                           void *data,

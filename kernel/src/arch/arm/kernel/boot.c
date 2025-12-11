@@ -624,12 +624,9 @@ static BOOT_CODE bool_t try_init_kernel(
     map_4MB_phys_to_vaddr((vspace_root_t *)rootserver.vspace, SHM_DATA_PADDR, shm_data_vaddr, 0);
     printf("data pptr 0x%lx vaddr 0x%lx\n", shm_data_reg.start, shm_data_v_reg.start);
 
-    // 测试
-    char shmem_msg[] = "Hello, New HyperAMP!";
-    const unsigned long shmemComm_msg_len = sizeof(shmem_msg);
-    char* it = (char*)rootserver.shm_sel4_queue;
-    for (unsigned i = 0; i < shmemComm_msg_len; ++i) 
-        it[i] = shmem_msg[i];
+    // 注意: 不要在内核中直接写入共享内存!
+    // 内核直接映射区使用 cacheable 属性,会导致缓存不一致问题
+    // 应该由用户空间程序通过 uncached 映射进行初始化
 
     // 将共享内存虚拟地址传递给用户空间（与之前实现相同）
     // store the first available vaddr in ipc buffer

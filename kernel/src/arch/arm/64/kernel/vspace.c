@@ -26,6 +26,7 @@
 #include <arch/object/iospace.h>
 #include <arch/object/vcpu.h>
 #include <arch/machine/tlb.h>
+#include <shared_memory.h>  // 新增：共享内存支持
 
 /*
  * Memory types are defined in Memory Attribute Indirection Register.
@@ -335,6 +336,19 @@ static BOOT_CODE void map_4MB_phys_to_vaddr(vspace_root_t *vspaceRoot,
 
         /* 在 PT 中写入 4KB 页表项 */
         pt += GET_UPT_INDEX(vptr, ULVL_FRM_ARM_PT_LVL(3));
+        
+        /* HyperAMP: 对共享内存区域使用 uncached 映射 (Stage-1 for EL1 guest) */
+        word_t mem_attr;
+        if (cur_paddr >= SHM_TX_QUEUE_PADDR && cur_paddr < (SHM_DATA_PADDR + SHM_DATA_SIZE)) {
+            mem_attr = DEVICE_nGnRnE;  /* Stage-1: Uncached device memory for shared memory */
+            if (i == 0) {  /* 只打印第一页 */
+                printf("[HyperAMP] map_4MB: PA 0x%lx -> DEVICE_nGnRnE (uncached)\n", 
+                       (unsigned long)cur_paddr);
+            }
+        } else {
+            mem_attr = NORMAL;  /* Stage-1: Normal cacheable memory */
+        }
+        
         *(pt) = pte_pte_4k_page_new(
                       !executable,                    /* unprivileged execute never (XN) */
                       cur_paddr,                      /* page_base_address: 使用物理地址 */
@@ -346,11 +360,7 @@ static BOOT_CODE void map_4MB_phys_to_vaddr(vspace_root_t *vspaceRoot,
                       1,                              /* access flag */
                       SMP_TERNARY(SMP_SHARE, 0),      /* sharable if SMP */
                       APFromVMRights(VMReadWrite),    /* R/W */
-#ifdef CONFIG_ARM_HYPERVISOR_SUPPORT
-                      S2_NORMAL
-#else
-                      NORMAL
-#endif
+                      mem_attr
                   );
     }
 }
@@ -384,9 +394,21 @@ static BOOT_CODE void map_it_frame_cap(cap_t vspace_cap, cap_t frame_cap, bool_t
     pd += GET_UPT_INDEX(vptr, ULVL_FRM_ARM_PT_LVL(2));
     assert(pte_pte_table_ptr_get_present(pd));
     pt = paddr_to_pptr(pte_pte_table_ptr_get_pt_base_address(pd));
+    
+    /* HyperAMP: 对共享内存区域使用 uncached 映射 (Stage-1 for EL1 guest) */
+    paddr_t frame_paddr = pptr_to_paddr(pptr);
+    word_t mem_attr;
+    if (frame_paddr >= SHM_TX_QUEUE_PADDR && frame_paddr < (SHM_DATA_PADDR + SHM_DATA_SIZE)) {
+        mem_attr = DEVICE_nGnRnE;  /* Stage-1: Uncached device memory for shared memory */
+        printf("[HyperAMP] map_it_frame_cap: PA 0x%lx -> DEVICE_nGnRnE (uncached)\n", 
+               (unsigned long)frame_paddr);
+    } else {
+        mem_attr = NORMAL;  /* Stage-1: Normal cacheable memory */
+    }
+    
     *(pt + GET_UPT_INDEX(vptr, ULVL_FRM_ARM_PT_LVL(3))) = pte_pte_4k_page_new(
                                                               !executable,                    /* unprivileged execute never */
-                                                              pptr_to_paddr(pptr),            /* page_base_address    */
+                                                              frame_paddr,                    /* page_base_address    */
 #ifdef CONFIG_ARM_HYPERVISOR_SUPPORT
                                                               0,
 #else
@@ -395,11 +417,7 @@ static BOOT_CODE void map_it_frame_cap(cap_t vspace_cap, cap_t frame_cap, bool_t
                                                               1,                              /* access flag */
                                                               SMP_TERNARY(SMP_SHARE, 0),              /* Inner-shareable if SMP enabled, otherwise unshared */
                                                               APFromVMRights(VMReadWrite),
-#ifdef CONFIG_ARM_HYPERVISOR_SUPPORT
-                                                              S2_NORMAL
-#else
-                                                              NORMAL
-#endif
+                                                              mem_attr
                                                           );
 }
 
