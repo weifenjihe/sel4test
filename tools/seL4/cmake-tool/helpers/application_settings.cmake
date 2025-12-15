@@ -43,6 +43,10 @@ function(ApplyData61ElfLoaderSettings kernel_platform kernel_sel4_arch)
         # runs after uboot.
         set(IMAGE_START_ADDR 0x42000000 CACHE INTERNAL "" FORCE)
     endif()
+    if (KernelPlatformImx8mp-evk)
+        # 针对 i.MX8MP EVK 设置特定的启动地址 (通常用于 AArch64 模式)
+        set(IMAGE_START_ADDR 0x50400000 CACHE INTERNAL "" FORCE)
+    endif()
     if(KernelPlatformHikey AND KernelSel4ArchAarch32)
         # This is preserving what the Hikey's bootloader requires.
         set(IMAGE_START_ADDR 0x1000 CACHE INTERNAL "" FORCE)

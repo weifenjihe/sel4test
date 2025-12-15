@@ -45,47 +45,47 @@
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
 
-		cpu@0 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a53";
-			reg = <0x00>;
-			clock-latency = <0xee6c>;
-			clocks = <0x02 0x11f>;
-			enable-method = "psci";
-			i-cache-size = <0x8000>;
-			i-cache-line-size = <0x40>;
-			i-cache-sets = <0x100>;
-			d-cache-size = <0x8000>;
-			d-cache-line-size = <0x40>;
-			d-cache-sets = <0x80>;
-			next-level-cache = <0x03>;
-			nvmem-cells = <0x04>;
-			nvmem-cell-names = "speed_grade";
-			operating-points-v2 = <0x05>;
-			#cooling-cells = <0x02>;
-			cpu-supply = <0x06>;
-			phandle = <0x0e>;
-		};
+		// cpu@0 {
+		// 	device_type = "cpu";
+		// 	compatible = "arm,cortex-a53";
+		// 	reg = <0x00>;
+		// 	clock-latency = <0xee6c>;
+		// 	clocks = <0x02 0x11f>;
+		// 	enable-method = "psci";
+		// 	i-cache-size = <0x8000>;
+		// 	i-cache-line-size = <0x40>;
+		// 	i-cache-sets = <0x100>;
+		// 	d-cache-size = <0x8000>;
+		// 	d-cache-line-size = <0x40>;
+		// 	d-cache-sets = <0x80>;
+		// 	next-level-cache = <0x03>;
+		// 	nvmem-cells = <0x04>;
+		// 	nvmem-cell-names = "speed_grade";
+		// 	operating-points-v2 = <0x05>;
+		// 	#cooling-cells = <0x02>;
+		// 	cpu-supply = <0x06>;
+		// 	phandle = <0x0e>;
+		// };
 
-		cpu@1 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a53";
-			reg = <0x01>;
-			clock-latency = <0xee6c>;
-			clocks = <0x02 0x11f>;
-			enable-method = "psci";
-			i-cache-size = <0x8000>;
-			i-cache-line-size = <0x40>;
-			i-cache-sets = <0x100>;
-			d-cache-size = <0x8000>;
-			d-cache-line-size = <0x40>;
-			d-cache-sets = <0x80>;
-			next-level-cache = <0x03>;
-			operating-points-v2 = <0x05>;
-			#cooling-cells = <0x02>;
-			cpu-supply = <0x06>;
-			phandle = <0x0f>;
-		};
+		// cpu@1 {
+		// 	device_type = "cpu";
+		// 	compatible = "arm,cortex-a53";
+		// 	reg = <0x01>;
+		// 	clock-latency = <0xee6c>;
+		// 	clocks = <0x02 0x11f>;
+		// 	enable-method = "psci";
+		// 	i-cache-size = <0x8000>;
+		// 	i-cache-line-size = <0x40>;
+		// 	i-cache-sets = <0x100>;
+		// 	d-cache-size = <0x8000>;
+		// 	d-cache-line-size = <0x40>;
+		// 	d-cache-sets = <0x80>;
+		// 	next-level-cache = <0x03>;
+		// 	operating-points-v2 = <0x05>;
+		// 	#cooling-cells = <0x02>;
+		// 	cpu-supply = <0x06>;
+		// 	phandle = <0x0f>;
+		// };
 
 		cpu@2 {
 			device_type = "cpu";
@@ -2567,9 +2567,9 @@
 		};
 	};
 
-	memory@40000000 {
-		device_type = "memory";
-    reg = <0x00 0x40000000 0x00 0xc0000000 0x01 0x00 0x00 0xc0000000>;
+	memory@60000000 {
+    device_type = "memory";
+    reg = <0x0 0x60000000 0x0 0x20000000>;
 	};
 
 	pcie0-refclk {

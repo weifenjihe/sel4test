@@ -11,9 +11,21 @@
 
 // 共享内存物理地址定义 4KB 队列
 // 与 Linux 端布局匹配 (统一使用 4KB 对齐)
-#define SHM_TX_QUEUE_PADDR  0xDE000000UL  /* TX Queue: Linux → seL4, 4KB */
-#define SHM_RX_QUEUE_PADDR  0xDE001000UL  /* RX Queue: seL4 → Linux, 4KB (4KB aligned) */
-#define SHM_DATA_PADDR      0xDE002000UL  /* Data Region, 4MB (8KB offset) */
+#if defined(CONFIG_PLAT_IMX8MP_EVK)
+    // imx8MP 平台共享内存配置
+    #define SHM_TX_QUEUE_PADDR  0x7E000000UL
+    #define SHM_RX_QUEUE_PADDR  0x7E001000UL
+    #define SHM_DATA_PADDR      0x7E002000UL
+
+#elif defined(CONFIG_PLAT_PHYTIUM_PI)
+    // Phytium-Pi 平台共享内存配置
+    #define SHM_TX_QUEUE_PADDR  0xDE000000UL
+    #define SHM_RX_QUEUE_PADDR  0xDE001000UL
+    #define SHM_DATA_PADDR      0xDE002000UL
+
+#else
+    #error "Unknown Platform! Please define addresses for this board."
+#endif
 
 #define SHM_QUEUE_SIZE      (4 * 1024)    /* 4KB per queue (1 page, actual: ~4068 bytes) */
 #define SHM_DATA_SIZE       (4 * 1024 * 1024)  /* 4MB */

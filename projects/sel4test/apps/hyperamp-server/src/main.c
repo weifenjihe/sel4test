@@ -18,11 +18,25 @@
 #include "highspeed_proxy_frontend_sim.h"  // 前端协议栈模拟器
 
 /* ==================== 配置常量 ==================== */
+#if defined(CONFIG_PLAT_IMX8MP_EVK)
+    // imx8MP 平台共享内存配置
+    #define SHM_TX_QUEUE_PADDR  0x7E000000UL
+    #define SHM_RX_QUEUE_PADDR  0x7E001000UL
+    #define SHM_DATA_PADDR      0x7E002000UL
 
+#elif defined(CONFIG_PLAT_PHYTIUM_PI)
+    // Phytium-Pi 平台共享内存配置
+    #define SHM_TX_QUEUE_PADDR  0xDE000000UL
+    #define SHM_RX_QUEUE_PADDR  0xDE001000UL
+    #define SHM_DATA_PADDR      0xDE002000UL
+
+#else
+    #error "Unknown Platform! Please define addresses for this board."
+#endif
 // 物理地址定义 (与 kernel 配置匹配)
-#define SHM_TX_QUEUE_PADDR  0xDE000000UL
-#define SHM_RX_QUEUE_PADDR  0xDE001000UL
-#define SHM_DATA_PADDR      0xDE002000UL
+// #define SHM_TX_QUEUE_PADDR  0x7E000000UL
+// #define SHM_RX_QUEUE_PADDR  0x7E001000UL
+// #define SHM_DATA_PADDR      0x7E002000UL
 
 // HyperAMP 布局 (与 Linux 端和内核配置匹配)
 #define SHM_TX_QUEUE_SIZE       (4 * 1024)        // 4KB TX Queue
@@ -544,10 +558,13 @@ int main(void)
     // 正确的架构：
     // - TX Queue (0xDE000000): seL4 → Linux (seL4 前端发送请求，Linux 后端接收)
     // - RX Queue (0xDE001000): Linux → seL4 (Linux 后端发送响应，seL4 前端接收)
-    g_tx_queue = (volatile HyperampShmQueue *)vaddrs[0];    // TX: seL4 → Linux (seL4 写请求)
-    g_rx_queue = (volatile HyperampShmQueue *)vaddrs[1];    // RX: Linux → seL4 (seL4 读响应)
-    g_data_region = (volatile void *)vaddrs[2];             // Data Region: 4MB
-    
+
+    // g_tx_queue = (volatile HyperampShmQueue *)vaddrs[0];    // TX: seL4 → Linux (seL4 写请求)
+    // g_rx_queue = (volatile HyperampShmQueue *)vaddrs[1];    // RX: Linux → seL4 (seL4 读响应)
+    // g_data_region = (volatile void *)vaddrs[2];             // Data Region: 4MB
+    g_tx_queue = (volatile HyperampShmQueue *)0x54e000;
+    g_rx_queue = (volatile HyperampShmQueue *)0x54f000;
+    g_data_region = (volatile void *)0x550000;
     printf("[seL4] Shared Memory Addresses:\n");
     printf("  TX Queue (seL4->Linux): %p\n", (void *)g_tx_queue);
     printf("  RX Queue (Linux->seL4): %p\n", (void *)g_rx_queue);
