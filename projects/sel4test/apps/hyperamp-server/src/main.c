@@ -65,7 +65,7 @@ static int g_error_count = 0;
 /* 测试模式选择 */
 #define TEST_MODE_LISTEN    0  // 监听后端响应（原模式）
 #define TEST_MODE_FRONTEND  1  // 运行前端协议栈模拟器
-#define CURRENT_TEST_MODE   TEST_MODE_FRONTEND  // 切换测试模式
+#define CURRENT_TEST_MODE   TEST_MODE_LISTEN  // 切换测试模式
 
 /* ==================== 辅助函数 ==================== */
 
@@ -327,6 +327,45 @@ static int send_reply_to_linux(const char *reply_data, size_t reply_len,
     return ret;
 }
 
+/* ==================== 安全的测试函数 ==================== */
+#define TEST_IRQ_NUMBER  74 //软中断号
+
+//手动指定一个很可能为空的槽位索引,通常 RootTask 的 CNode 至少有 12位 (4096个槽位)
+#define TEST_HARDCODED_SLOT  2000 // 前几百个被系统占用
+
+static void test_interrupt_registration_blind(void) 
+{
+    printf("\n[seL4] ========== Interrupt Registration Test (Blind Slot Mode) ==========\n");
+    printf("[seL4] Note: Skipping BootInfo. Assuming Slot %d is empty.\n", TEST_HARDCODED_SLOT);
+
+    seL4_CPtr irq_handler_cap = (seL4_CPtr)TEST_HARDCODED_SLOT;
+
+    printf("[seL4] Step 1: Trying to get IRQ Handler Cap for IRQ %d into Slot %lu...\n", 
+           TEST_IRQ_NUMBER, irq_handler_cap);
+    
+    // 请求中断权能
+    int error = seL4_IRQControl_Get(seL4_CapIRQControl, TEST_IRQ_NUMBER, 
+                                    seL4_CapInitThreadCNode, irq_handler_cap, seL4_WordBits);
+
+    if (error == seL4_NoError) {
+        printf("[seL4] ✓ SUCCESS: Kernel granted IRQ Handler Cap for IRQ %d!\n", TEST_IRQ_NUMBER);
+        printf("[seL4]   -> This CONFIRMS the Kernel GIC driver is working.\n");
+    } else {
+        printf("[seL4] ✗ FAILED: Could not get IRQ Cap. Error: %d\n", error);
+        
+        if (error == 8) { // seL4_DeleteFirst
+            printf("[seL4]   -> Error 8: Slot %d is ALREADY OCCUPIED.\n", TEST_HARDCODED_SLOT);
+            printf("[seL4]      Try changing TEST_HARDCODED_SLOT to a different number.\n");
+        } else if (error == 2) { // seL4_FailedLookup
+            printf("[seL4]   -> Error 2: Slot %d is OUT OF BOUNDS (CNode too small).\n", TEST_HARDCODED_SLOT);
+            printf("[seL4]      Try a smaller number (e.g., 500).\n");
+        } else {
+            printf("[seL4]   -> Other error. Check Kernel IRQ configuration.\n");
+        }
+    }
+
+    printf("[seL4] =============================================================\n\n");
+}
 /* ==================== 主消息循环 ==================== */
 
 /**
@@ -547,7 +586,8 @@ int main(void)
     printf("  HyperAMP Server for seL4\n");
     printf("  Compatible with HighSpeedCProxy\n");
     printf("================================================\n\n");
-    
+
+    test_interrupt_registration_blind();
     // 从 IPC buffer 获取共享内存地址
     // boot.c 存储方式: IPC buffer 第一个 word 存储指向地址数组的指针
     // 该数组包含: [TX Queue vaddr, RX Queue vaddr, Data Region vaddr]

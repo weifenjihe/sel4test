@@ -117,42 +117,42 @@ BOOT_CODE static bool_t arch_init_freemem(p_region_t ui_p_reg,
 }
 
 
-// BOOT_CODE static void init_irqs(cap_t root_cnode_cap)
-// {
-//     unsigned i;
+BOOT_CODE static void init_irqs(cap_t root_cnode_cap)
+{
+    unsigned i;
 
-//     for (i = 0; i <= maxIRQ ; i++) {
-//         setIRQState(IRQInactive, CORE_IRQ_TO_IRQT(0, i));
-//     }
-//     setIRQState(IRQTimer, CORE_IRQ_TO_IRQT(0, KERNEL_TIMER_IRQ));
-// #ifdef CONFIG_ARM_HYPERVISOR_SUPPORT
-//     setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, INTERRUPT_VGIC_MAINTENANCE));
-//     setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, INTERRUPT_VTIMER_EVENT));
-// #endif
-// #ifdef CONFIG_TK1_SMMU
-//     setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, INTERRUPT_SMMU));
-// #endif
+    for (i = 0; i <= maxIRQ ; i++) {
+        setIRQState(IRQInactive, CORE_IRQ_TO_IRQT(0, i));
+    }
+    setIRQState(IRQTimer, CORE_IRQ_TO_IRQT(0, KERNEL_TIMER_IRQ));
+#ifdef CONFIG_ARM_HYPERVISOR_SUPPORT
+    setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, INTERRUPT_VGIC_MAINTENANCE));
+    setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, INTERRUPT_VTIMER_EVENT));
+#endif
+#ifdef CONFIG_TK1_SMMU
+    setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, INTERRUPT_SMMU));
+#endif
 
-// #ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
-// #ifdef KERNEL_PMU_IRQ
-//     setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, KERNEL_PMU_IRQ));
-// #if (defined CONFIG_PLAT_TX1 && defined ENABLE_SMP_SUPPORT)
-// //SELFOUR-1252
-// #error "This platform doesn't support tracking CPU utilisation on multicore"
-// #endif /* CONFIG_PLAT_TX1 && ENABLE_SMP_SUPPORT */
-// #else
-// #error "This platform doesn't support tracking CPU utilisation feature"
-// #endif /* KERNEL_TIMER_IRQ */
-// #endif /* CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT */
+#ifdef CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT
+#ifdef KERNEL_PMU_IRQ
+    setIRQState(IRQReserved, CORE_IRQ_TO_IRQT(0, KERNEL_PMU_IRQ));
+#if (defined CONFIG_PLAT_TX1 && defined ENABLE_SMP_SUPPORT)
+//SELFOUR-1252
+#error "This platform doesn't support tracking CPU utilisation on multicore"
+#endif /* CONFIG_PLAT_TX1 && ENABLE_SMP_SUPPORT */
+#else
+#error "This platform doesn't support tracking CPU utilisation feature"
+#endif /* KERNEL_TIMER_IRQ */
+#endif /* CONFIG_ARM_ENABLE_PMU_OVERFLOW_INTERRUPT */
 
-// #ifdef ENABLE_SMP_SUPPORT
-//     setIRQState(IRQIPI, CORE_IRQ_TO_IRQT(getCurrentCPUIndex(), irq_remote_call_ipi));
-//     setIRQState(IRQIPI, CORE_IRQ_TO_IRQT(getCurrentCPUIndex(), irq_reschedule_ipi));
-// #endif
+#ifdef ENABLE_SMP_SUPPORT
+    setIRQState(IRQIPI, CORE_IRQ_TO_IRQT(getCurrentCPUIndex(), irq_remote_call_ipi));
+    setIRQState(IRQIPI, CORE_IRQ_TO_IRQT(getCurrentCPUIndex(), irq_reschedule_ipi));
+#endif
 
-//     /* provide the IRQ control cap */
-//     write_slot(SLOT_PTR(pptr_of_cap(root_cnode_cap), seL4_CapIRQControl), cap_irq_control_cap_new());
-// }
+    /* provide the IRQ control cap */
+    write_slot(SLOT_PTR(pptr_of_cap(root_cnode_cap), seL4_CapIRQControl), cap_irq_control_cap_new());
+}
 
 #ifdef CONFIG_ARM_SMMU
 BOOT_CODE static void init_smmu(cap_t root_cnode_cap)
@@ -241,8 +241,8 @@ BOOT_CODE static bool_t init_cpu(void)
     }
 #endif /* CONFIG_HAVE_FPU */
 
-    // cpu_initLocalIRQController();
-    printf("[kernel] Local IRQ Controller initialization DISABLED for shared memory testing\n");
+    cpu_initLocalIRQController();
+    // printf("[kernel] Local IRQ Controller initialization DISABLED for shared memory testing\n");
 
 #ifdef CONFIG_ENABLE_BENCHMARKS
     arm_init_ccnt();
@@ -251,8 +251,8 @@ BOOT_CODE static bool_t init_cpu(void)
     /* Export selected CPU features for access by PL0 */
     armv_init_user_access();
 
-    // initTimer();
-    printf("[kernel] Timer initialization DISABLED for shared memory testing\n");
+    initTimer();
+    // printf("[kernel] Timer initialization DISABLED for shared memory testing\n");
 
     return true;
 }
@@ -261,8 +261,8 @@ BOOT_CODE static bool_t init_cpu(void)
 
 BOOT_CODE static void init_plat(void)
 {
-    // initIRQController();
-    printf("[kernel] Global IRQ Controller initialization DISABLED for shared memory testing\n");
+    initIRQController();
+    // printf("[kernel] Global IRQ Controller initialization DISABLED for shared memory testing\n");
 
     initL2Cache();
 #ifdef CONFIG_ARM_SMMU
@@ -451,8 +451,8 @@ static BOOT_CODE bool_t try_init_kernel(
     create_domain_cap(root_cnode_cap);
 
     /* initialise the IRQ states and provide the IRQ control cap */
-    // init_irqs(root_cnode_cap);
-    printf("[kernel] IRQ states initialization DISABLED for shared memory testing\n");
+    init_irqs(root_cnode_cap);
+    // printf("[kernel] IRQ states initialization DISABLED for shared memory testing\n");
 
 #ifdef CONFIG_ARM_SMMU
     /* initialise the SMMU and provide the SMMU control caps*/
