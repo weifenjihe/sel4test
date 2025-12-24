@@ -1060,9 +1060,9 @@ int main(void) {
     unsigned long long *vaddrs = (unsigned long long *)*Ptr2ShmemCommBuff;
     
     // 设置全局指针（用户态通过 IPC buffer 获取虚拟地址）
-    g_root_q_vaddr = (volatile struct AmpMsgQueue *)vaddrs[0];
-    g_sel4_q_vaddr = (volatile struct AmpMsgQueue *)vaddrs[1];
-    g_data_vaddr = (volatile char *)vaddrs[2];
+    g_root_q_vaddr = (volatile struct AmpMsgQueue *)0x54e000;
+    g_sel4_q_vaddr = (volatile struct AmpMsgQueue *)0x54f000;
+    g_data_vaddr = (volatile char *)0x550000;
     
     // 打印三个共享内存区域的虚拟地址
     printf("Shared Memory Virtual Addresses:\n");
