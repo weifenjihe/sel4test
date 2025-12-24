@@ -53,10 +53,10 @@
 // - seL4 运行前端协议栈 (Frontend)：负责生成请求，处理响应
 // - Linux 运行后端协议栈 (Backend)：负责转发请求到网络，返回响应
 //
-// TX Queue: seL4 → Linux (seL4 写入请求，Linux 读取并转发到网络)
-// RX Queue: Linux → seL4 (Linux 写入响应，seL4 读取并交给应用)
-static volatile HyperampShmQueue *g_tx_queue = NULL;  // seL4 → Linux (seL4 写请求)
-static volatile HyperampShmQueue *g_rx_queue = NULL;  // Linux → seL4 (seL4 读响应)
+// - TX Queue (0xDE000000): seL4 → Linux (seL4 前端发送请求，Linux 后端接收)
+// - RX Queue (0xDE001000): Linux → seL4 (Linux 后端发送响应，seL4 前端接收)
+static volatile HyperampShmQueue *g_tx_queue = NULL;  // seL4 → Linux (seL4 写请求,Linux读)
+static volatile HyperampShmQueue *g_rx_queue = NULL;  // Linux → seL4 (seL4 读响应，Linux写)
 volatile void *g_data_region = NULL;  // 全局变量，供 highspeed_proxy_frontend_sim.h 使用
 
 static int g_message_count = 0;
@@ -65,7 +65,7 @@ static int g_error_count = 0;
 /* 测试模式选择 */
 #define TEST_MODE_LISTEN    0  // 监听后端响应（原模式）
 #define TEST_MODE_FRONTEND  1  // 运行前端协议栈模拟器
-#define CURRENT_TEST_MODE   TEST_MODE_LISTEN  // 切换测试模式
+#define CURRENT_TEST_MODE   TEST_MODE_FRONTEND  // 切换测试模式
 
 /* ==================== 辅助函数 ==================== */
 
@@ -327,45 +327,7 @@ static int send_reply_to_linux(const char *reply_data, size_t reply_len,
     return ret;
 }
 
-/* ==================== 安全的测试函数 ==================== */
-#define TEST_IRQ_NUMBER  74 //软中断号
 
-//手动指定一个很可能为空的槽位索引,通常 RootTask 的 CNode 至少有 12位 (4096个槽位)
-#define TEST_HARDCODED_SLOT  2000 // 前几百个被系统占用
-
-static void test_interrupt_registration_blind(void) 
-{
-    printf("\n[seL4] ========== Interrupt Registration Test (Blind Slot Mode) ==========\n");
-    printf("[seL4] Note: Skipping BootInfo. Assuming Slot %d is empty.\n", TEST_HARDCODED_SLOT);
-
-    seL4_CPtr irq_handler_cap = (seL4_CPtr)TEST_HARDCODED_SLOT;
-
-    printf("[seL4] Step 1: Trying to get IRQ Handler Cap for IRQ %d into Slot %lu...\n", 
-           TEST_IRQ_NUMBER, irq_handler_cap);
-    
-    // 请求中断权能
-    int error = seL4_IRQControl_Get(seL4_CapIRQControl, TEST_IRQ_NUMBER, 
-                                    seL4_CapInitThreadCNode, irq_handler_cap, seL4_WordBits);
-
-    if (error == seL4_NoError) {
-        printf("[seL4] ✓ SUCCESS: Kernel granted IRQ Handler Cap for IRQ %d!\n", TEST_IRQ_NUMBER);
-        printf("[seL4]   -> This CONFIRMS the Kernel GIC driver is working.\n");
-    } else {
-        printf("[seL4] ✗ FAILED: Could not get IRQ Cap. Error: %d\n", error);
-        
-        if (error == 8) { // seL4_DeleteFirst
-            printf("[seL4]   -> Error 8: Slot %d is ALREADY OCCUPIED.\n", TEST_HARDCODED_SLOT);
-            printf("[seL4]      Try changing TEST_HARDCODED_SLOT to a different number.\n");
-        } else if (error == 2) { // seL4_FailedLookup
-            printf("[seL4]   -> Error 2: Slot %d is OUT OF BOUNDS (CNode too small).\n", TEST_HARDCODED_SLOT);
-            printf("[seL4]      Try a smaller number (e.g., 500).\n");
-        } else {
-            printf("[seL4]   -> Other error. Check Kernel IRQ configuration.\n");
-        }
-    }
-
-    printf("[seL4] =============================================================\n\n");
-}
 /* ==================== 主消息循环 ==================== */
 
 /**
@@ -518,7 +480,7 @@ void hyperamp_server_main_loop(void)
     // 消息处理缓冲区
     char msg_buf[4096];
     size_t msg_len;
-    
+    int i =0;
     // 主循环：监听来自 Linux 后端的响应
     while (1) {
         /* 关键：在读取队列状态前失效缓存，确保读取到 Linux 写入的最新数据 */
@@ -529,7 +491,11 @@ void hyperamp_server_main_loop(void)
                                                      offsetof(HyperampShmQueue, header));
         uint16_t rx_tail = hyperamp_safe_read_u16(g_rx_queue,
                                                    offsetof(HyperampShmQueue, tail));
-        
+        i++;
+        if(i%100000==0){
+            printf("[seL4] RX Queue: header=%u, tail=%u\n", rx_header, rx_tail);
+            printf("[seL4] RX Queue: %p\n", g_rx_queue);
+        }
         if (rx_tail != rx_header) {
             // 有响应消息,出队
             // 重要：数据区使用独立的共享内存区域 (0xDE002000)
@@ -573,6 +539,7 @@ void hyperamp_server_main_loop(void)
         
         // 简单延迟,避免过度占用 CPU
         for (volatile int i = 0; i < 10000; i++);
+        
     }
 }
 
@@ -587,7 +554,6 @@ int main(void)
     printf("  Compatible with HighSpeedCProxy\n");
     printf("================================================\n\n");
 
-    test_interrupt_registration_blind();
     // 从 IPC buffer 获取共享内存地址
     // boot.c 存储方式: IPC buffer 第一个 word 存储指向地址数组的指针
     // 该数组包含: [TX Queue vaddr, RX Queue vaddr, Data Region vaddr]
@@ -606,8 +572,8 @@ int main(void)
     g_rx_queue = (volatile HyperampShmQueue *)0x54f000;
     g_data_region = (volatile void *)0x550000;
     printf("[seL4] Shared Memory Addresses:\n");
-    printf("  TX Queue (seL4->Linux): %p\n", (void *)g_tx_queue);
-    printf("  RX Queue (Linux->seL4): %p\n", (void *)g_rx_queue);
+    printf("  TX Queue[0xde000000] (seL4->Linux): %p\n", (void *)g_tx_queue);
+    printf("  RX Queue[0xde001000] (Linux->seL4)(): %p\n", (void *)g_rx_queue);
     printf("  Data Region:            %p\n", (void *)g_data_region);
     
     // 验证地址有效性
@@ -615,32 +581,6 @@ int main(void)
         printf("[seL4] ERROR: Invalid shared memory addresses!\n");
         return -1;
     }
-    
-    // // 地址访问测试 - 测试三个区域是否都能正常访问
-    // printf("[seL4] Testing memory access...\n");
-    
-    // // 测试 TX Queue 访问 (读取第一个字节)
-    // printf("[seL4] Testing TX Queue access at %p...", (void *)g_tx_queue);
-    // volatile uint8_t *tx_test = (volatile uint8_t *)g_tx_queue;
-    // volatile uint8_t tx_byte = tx_test[0];  // 读取第一个字节
-    // tx_test[0] = tx_byte;  // 写回
-    // printf(" OK (first byte: 0x%02x)\n", tx_byte);
-    
-    // // 测试 RX Queue 访问
-    // printf("[seL4] Testing RX Queue access at %p...", (void *)g_rx_queue);
-    // volatile uint8_t *rx_test = (volatile uint8_t *)g_rx_queue;
-    // volatile uint8_t rx_byte = rx_test[0];
-    // rx_test[0] = rx_byte;
-    // printf(" OK (first byte: 0x%02x)\n", rx_byte);
-    
-    // // 测试 Data Region 访问
-    // printf("[seL4] Testing Data Region access at %p...", (void *)g_data_region);
-    // volatile uint8_t *data_test = (volatile uint8_t *)g_data_region;
-    // volatile uint8_t data_byte = data_test[0];
-    // data_test[0] = data_byte;
-    // printf(" OK (first byte: 0x%02x)\n", data_byte);
-    
-    // printf("[seL4] Memory access test PASSED!\n");
     
     // 检查结构体大小
     printf("[seL4] HyperampShmQueue size: %zu bytes\n", sizeof(HyperampShmQueue));
