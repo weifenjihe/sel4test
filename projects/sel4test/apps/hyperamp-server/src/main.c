@@ -101,6 +101,10 @@ static void print_string(const char *data, size_t len, size_t max_display)
 
 /* ==================== 服务处理函数 ==================== */
 
+// 前向声明
+static int send_reply_to_linux(const char *reply_data, size_t reply_len, 
+                                uint16_t frontend_sess, uint16_t backend_sess);
+
 /**
  * @brief Echo 服务 - 简单回显
  */
@@ -113,27 +117,70 @@ static int service_echo(volatile void *data_ptr, size_t length)
 
 /**
  * @brief 加密服务 - XOR 加密
+ * @note 加密后的数据会通过 TX Queue 发回 Linux
  */
-static int service_encrypt(volatile void *data_ptr, size_t length)
+static int service_encrypt(volatile void *data_ptr, size_t length, 
+                           uint16_t frontend_sess, uint16_t backend_sess)
 {
     printf("[seL4] Encrypting %zu bytes\n", length);
+    print_string((const char *)data_ptr, length, 64);
     
-    volatile uint8_t *buf = (volatile uint8_t *)data_ptr;
-    for (size_t i = 0; i < length; i++) {
-        buf[i] ^= 0x5A;  // XOR 密钥
+    // 复制到本地缓冲区进行操作
+    uint8_t result_buf[HYPERAMP_MSG_MAX_SIZE];
+    size_t result_len = (length > HYPERAMP_MSG_MAX_SIZE) ? HYPERAMP_MSG_MAX_SIZE : length;
+    hyperamp_safe_memcpy(result_buf, data_ptr, result_len);
+    
+    // XOR 加密
+    for (size_t i = 0; i < result_len; i++) {
+        result_buf[i] ^= 0x5A;  // XOR 密钥
     }
     
-    printf("[seL4] Encryption complete\n");
-    return HYPERAMP_OK;
+    printf("[seL4] Encryption complete, result:\n");
+    // print_hex(result_buf, result_len, 32);
+    print_string((const char *)result_buf, result_len, 64);
+
+    // 发送加密结果回 Linux
+    int ret = send_reply_to_linux((const char *)result_buf, result_len, frontend_sess, backend_sess);
+    if (ret == HYPERAMP_OK) {
+        printf("[seL4] \u2713 Encrypted data sent to Linux\n");
+    } else {
+        printf("[seL4] \u2717 Failed to send encrypted data\n");
+    }
+    
+    return ret;
 }
 
 /**
- * @brief 解密服务 - XOR 解密 (与加密相同)
+ * @brief 解密服务 - XOR 解密 (与加密算法相同，但显示不同的日志)
  */
-static int service_decrypt(volatile void *data_ptr, size_t length)
+static int service_decrypt(volatile void *data_ptr, size_t length,
+                           uint16_t frontend_sess, uint16_t backend_sess)
 {
     printf("[seL4] Decrypting %zu bytes\n", length);
-    return service_encrypt(data_ptr, length);  // XOR 是对称的
+    print_hex((const uint8_t *)data_ptr, length, 32);
+    
+    // 复制到本地缓冲区进行操作
+    uint8_t result_buf[HYPERAMP_MSG_MAX_SIZE];
+    size_t result_len = (length > HYPERAMP_MSG_MAX_SIZE) ? HYPERAMP_MSG_MAX_SIZE : length;
+    hyperamp_safe_memcpy(result_buf, data_ptr, result_len);
+    
+    // XOR 解密 (对称算法)
+    for (size_t i = 0; i < result_len; i++) {
+        result_buf[i] ^= 0x5A;  // XOR 密钥
+    }
+    
+    printf("[seL4] Decryption complete, result:\n");
+    print_string((const char *)result_buf, result_len, 64);
+    
+    // 发送解密结果回 Linux
+    int ret = send_reply_to_linux((const char *)result_buf, result_len, frontend_sess, backend_sess);
+    if (ret == HYPERAMP_OK) {
+        printf("[seL4] \u2713 Decrypted data sent to Linux\n");
+    } else {
+        printf("[seL4] \u2717 Failed to send decrypted data\n");
+    }
+    
+    return ret;
 }
 
 /**
@@ -251,18 +298,24 @@ static int service_proxy_message(volatile void *data_ptr, size_t length, uint8_t
 
 /**
  * @brief 处理单个消息
+ * @param data_ptr 数据指针
+ * @param length 数据长度
+ * @param service_id 服务ID
+ * @param frontend_sess 前端会话ID (用于回复)
+ * @param backend_sess 后端会话ID (用于回复)
  */
-static int process_message(volatile void *data_ptr, size_t length, uint16_t service_id)
+static int process_message(volatile void *data_ptr, size_t length, uint16_t service_id,
+                           uint16_t frontend_sess, uint16_t backend_sess)
 {
     switch (service_id) {
         case 0:  // Echo
             return service_echo(data_ptr, length);
             
         case 1:  // 加密
-            return service_encrypt(data_ptr, length);
+            return service_encrypt(data_ptr, length, frontend_sess, backend_sess);
             
         case 2:  // 解密
-            return service_decrypt(data_ptr, length);
+            return service_decrypt(data_ptr, length, frontend_sess, backend_sess);
             
         case 10:  // 设备消息
             return service_proxy_message(data_ptr, length, 0);
@@ -519,8 +572,16 @@ void hyperamp_server_main_loop(void)
                 size_t payload_len = hdr->payload_len;
                 
                 // 根据消息类型处理响应
-                int service_id = hdr->proxy_msg_type + 10;  // 映射到服务ID
-                int result = process_message(payload_ptr, payload_len, service_id);
+                int service_id;
+                if (hdr->proxy_msg_type == HYPERAMP_MSG_TYPE_SERVICE) {
+                    service_id = hdr->frontend_sess_id; // For Service Call, frontend_sess_id holds Service ID
+                    printf("[seL4] Service Call: ID %d\n", service_id);
+                } else {
+                    service_id = hdr->proxy_msg_type + 10;  // Mapping for original proxy types
+                }
+
+                int result = process_message(payload_ptr, payload_len, service_id,
+                                             hdr->frontend_sess_id, hdr->backend_sess_id);
                 
                 if (result == HYPERAMP_OK) {
                     printf("[seL4] ✓ Response processed successfully\n");

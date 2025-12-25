@@ -210,7 +210,8 @@ typedef enum {
     HYPERAMP_MSG_TYPE_DEV = 0,
     HYPERAMP_MSG_TYPE_STRGY = 1,
     HYPERAMP_MSG_TYPE_SESS = 2,
-    HYPERAMP_MSG_TYPE_DATA = 3
+    HYPERAMP_MSG_TYPE_DATA = 3,
+    HYPERAMP_MSG_TYPE_SERVICE = 0x10
 } HyperampMsgType;
 
 /* ==================== 安全内存操作 ==================== */
