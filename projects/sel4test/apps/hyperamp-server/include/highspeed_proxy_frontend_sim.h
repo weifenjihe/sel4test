@@ -86,7 +86,6 @@ static inline int frontend_send_message(FrontendProxyContext *ctx,
     
     size_t total_len = sizeof(HyperampMsgHeader) + payload_len;
     
-    // 重要：使用全局的 g_data_region 作为数据区基址
     // 数据区是独立的共享内存区域 (0xDE002000)
     extern volatile void *g_data_region;
     volatile void *tx_data_base = g_data_region;
@@ -239,7 +238,6 @@ static inline int frontend_receive_response(FrontendProxyContext *ctx,
     char msg_buf[4096];
     size_t msg_len;
     
-    // 重要：使用全局的 g_data_region 作为数据区基址
     // 数据区是独立的共享内存区域 (0xDE002000)
     extern volatile void *g_data_region;
     volatile void *rx_data_base = g_data_region;

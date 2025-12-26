@@ -57,7 +57,7 @@
 // - RX Queue (0xDE001000): Linux → seL4 (Linux 后端发送响应，seL4 前端接收)
 static volatile HyperampShmQueue *g_tx_queue = NULL;  // seL4 → Linux (seL4 写请求,Linux读)
 static volatile HyperampShmQueue *g_rx_queue = NULL;  // Linux → seL4 (seL4 读响应，Linux写)
-volatile void *g_data_region = NULL;  // 全局变量，供 highspeed_proxy_frontend_sim.h 使用
+volatile void *g_data_region = NULL;  // 共享数据区 (4MB)
 
 static int g_message_count = 0;
 static int g_error_count = 0;
@@ -65,7 +65,7 @@ static int g_error_count = 0;
 /* 测试模式选择 */
 #define TEST_MODE_LISTEN    0  // 监听后端响应（原模式）
 #define TEST_MODE_FRONTEND  1  // 运行前端协议栈模拟器
-#define CURRENT_TEST_MODE   TEST_MODE_FRONTEND  // 切换测试模式
+#define CURRENT_TEST_MODE   TEST_MODE_LISTEN  // 纯监听模式，不发送测试消息
 
 /* ==================== 辅助函数 ==================== */
 
@@ -334,7 +334,80 @@ static int process_message(volatile void *data_ptr, size_t length, uint16_t serv
             return service_echo(data_ptr, length);
     }
 }
-
+/**
+ * @brief 发送 Bulk 处理结果给 Linux
+ *
+ * 将更新后的 HyperampBulkDescriptor 封装为
+ * HYPERAMP_MSG_TYPE_BULK 消息，通过 TX Queue
+ * 返回给 Linux，实际数据仍位于共享数据区。
+ *
+ * @param desc Bulk 描述符指针
+ * @return HYPERAMP_OK / HYPERAMP_ERROR
+ */
+static int send_bulk_reply(HyperampBulkDescriptor *desc)
+{
+    HyperampMsgHeader msg_hdr = {
+        .version = 1,
+        .proxy_msg_type = HYPERAMP_MSG_TYPE_BULK,
+        .frontend_sess_id = 0,
+        .backend_sess_id = 0,
+        .payload_len = sizeof(HyperampBulkDescriptor),
+    };
+    
+    char msg_buf[128];
+    hyperamp_safe_memcpy(msg_buf, &msg_hdr, sizeof(HyperampMsgHeader));
+    hyperamp_safe_memcpy(msg_buf + sizeof(HyperampMsgHeader), desc, sizeof(HyperampBulkDescriptor));
+    
+    volatile void *tx_data_base = g_data_region;
+    int ret = hyperamp_queue_enqueue(g_tx_queue, ZONE_ID_SEL4, msg_buf, 
+                                     sizeof(HyperampMsgHeader) + sizeof(HyperampBulkDescriptor), 
+                                     tx_data_base);
+    if (ret == HYPERAMP_OK) {
+        printf("[seL4] Bulk reply sent\n");
+    } else {
+        printf("[seL4] Failed to send bulk reply\n");
+    }
+    return ret;
+}
+/**
+ * @brief 处理 Bulk（零拷贝）消息
+ *
+ * 根据 Bulk 描述符中的 offset/length，
+ * 直接对共享数据区中的数据进行加解密，
+ * 并通过 Bulk 回复返回处理结果。
+ *
+ * @param payload_ptr Bulk 描述符指针
+ * @param len payload 长度
+ * @return HYPERAMP_OK / HYPERAMP_ERROR
+ */
+static int process_bulk_message(void *payload_ptr, size_t len)
+{
+    if (len < sizeof(HyperampBulkDescriptor)) {
+        printf("[seL4] Error: Bulk msg too short\n");
+        return HYPERAMP_ERROR;
+    }
+    
+    HyperampBulkDescriptor *desc = (HyperampBulkDescriptor *)payload_ptr;
+    printf("[seL4] Processing Bulk: offset=0x%x, len=%u, service=%u\n", 
+           desc->offset, desc->length, desc->service_id);
+    
+    if (desc->offset + desc->length > SHM_DATA_SIZE) {
+        printf("[seL4] Error: Bulk data out of bounds\n");
+        desc->status = -1;
+    } else {
+        // Zero-copy processing
+        volatile uint8_t *data = (volatile uint8_t *)((uintptr_t)g_data_region + desc->offset);
+        
+        // Simple XOR encryption/decryption (symmetric)
+        // 对图像进行加解密
+        for (size_t i = 0; i < desc->length; i++) {
+            data[i] ^= 0x5A;
+        }
+        desc->status = 1; // Success
+    }
+    
+    return send_bulk_reply(desc);
+}
 /**
  * @brief 发送回复消息到 Linux
  */
@@ -367,7 +440,7 @@ static int send_reply_to_linux(const char *reply_data, size_t reply_len,
     
     // 入队到 TX Queue (seL4 → Linux)
     // 重要：数据区使用独立的共享内存区域 (0xDE002000)
-    volatile void *tx_data_base = g_data_region;
+    volatile void *tx_data_base = g_data_region;  // 共享数据区
     
     int ret = hyperamp_queue_enqueue(g_tx_queue, ZONE_ID_SEL4,
                                      msg_buf, total_size, tx_data_base);
@@ -552,7 +625,7 @@ void hyperamp_server_main_loop(void)
         if (rx_tail != rx_header) {
             // 有响应消息,出队
             // 重要：数据区使用独立的共享内存区域 (0xDE002000)
-            volatile void *rx_data_base = g_data_region;
+            volatile void *rx_data_base = g_data_region;  // 共享数据区
             printf("debug: rx_header=%u, rx_tail=%u, rx_data_base=%p,msg_len=%zu,msg_buf=%p\n", rx_header, rx_tail, rx_data_base, msg_len, msg_buf);
             int ret = hyperamp_queue_dequeue(g_rx_queue, ZONE_ID_SEL4,
                                             msg_buf, sizeof(msg_buf), &msg_len,
@@ -572,16 +645,22 @@ void hyperamp_server_main_loop(void)
                 size_t payload_len = hdr->payload_len;
                 
                 // 根据消息类型处理响应
-                int service_id;
-                if (hdr->proxy_msg_type == HYPERAMP_MSG_TYPE_SERVICE) {
-                    service_id = hdr->frontend_sess_id; // For Service Call, frontend_sess_id holds Service ID
-                    printf("[seL4] Service Call: ID %d\n", service_id);
+                int result;
+                if (hdr->proxy_msg_type == HYPERAMP_MSG_TYPE_BULK) {
+                    printf("[seL4] Received Bulk Transfer Request\n");
+                    result = process_bulk_message(payload_ptr, payload_len);
                 } else {
-                    service_id = hdr->proxy_msg_type + 10;  // Mapping for original proxy types
+                    int service_id;
+                    if (hdr->proxy_msg_type == HYPERAMP_MSG_TYPE_SERVICE) {
+                        service_id = hdr->frontend_sess_id; // For Service Call, frontend_sess_id holds Service ID
+                        printf("[seL4] Service Call: ID %d\n", service_id);
+                    } else {
+                        service_id = hdr->proxy_msg_type + 10;  // Mapping for original proxy types
+                    }
+    
+                    result = process_message(payload_ptr, payload_len, service_id,
+                                                 hdr->frontend_sess_id, hdr->backend_sess_id);
                 }
-
-                int result = process_message(payload_ptr, payload_len, service_id,
-                                             hdr->frontend_sess_id, hdr->backend_sess_id);
                 
                 if (result == HYPERAMP_OK) {
                     printf("[seL4] ✓ Response processed successfully\n");
@@ -632,10 +711,11 @@ int main(void)
     g_tx_queue = (volatile HyperampShmQueue *)0x54e000;
     g_rx_queue = (volatile HyperampShmQueue *)0x54f000;
     g_data_region = (volatile void *)0x550000;
+    
     printf("[seL4] Shared Memory Addresses:\n");
     printf("  TX Queue[0xde000000] (seL4->Linux): %p\n", (void *)g_tx_queue);
-    printf("  RX Queue[0xde001000] (Linux->seL4)(): %p\n", (void *)g_rx_queue);
-    printf("  Data Region:            %p\n", (void *)g_data_region);
+    printf("  RX Queue[0xde001000] (Linux->seL4): %p\n", (void *)g_rx_queue);
+    printf("  Data Region: %p (shared 4MB)\n", (void *)g_data_region);
     
     // 验证地址有效性
     if (!g_tx_queue || !g_rx_queue || !g_data_region) {
