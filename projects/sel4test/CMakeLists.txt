@@ -28,8 +28,8 @@ if((NOT Sel4testAllowSettingsOverride) AND (KernelArchARM OR KernelArchRiscV))
 endif()
 elfloader_import_project()
 
-# add_subdirectory(apps/sel4test-driver)
-add_subdirectory(apps/helloworld)
+add_subdirectory(apps/sel4test-driver)
+# add_subdirectory(apps/helloworld)
 
 if(SIMULATION)
     include(simulation)

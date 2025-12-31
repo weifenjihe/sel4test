@@ -73,7 +73,7 @@ uint64_t rk_get_time(rk_t *rk)
     uint64_t ticks = val0;
     ticks |= (uint64_t)val1 << 32;
 
-#if defined CONFIG_PLAT_RK3568
+#if defined CONFIG_PLAT_RK3568 || defined CONFIG_PLAT_RK3588
     ticks = UINT64_MAX - ticks;
 #endif
     return freq_cycles_and_hz_to_ns(ticks, RK_CLOCK_FREQUENCY);

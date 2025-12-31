@@ -11589,6 +11589,11 @@
 		phandle = <0x11a>;
 	};
 
+	memory@00000000 {
+		device_type = "memory";
+		reg = <0x00 0x00200000 0x00 0xEFE00000>;
+    };
+	
 	reserved-memory {
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
