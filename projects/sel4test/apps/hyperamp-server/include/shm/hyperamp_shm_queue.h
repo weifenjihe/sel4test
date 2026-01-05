@@ -227,6 +227,48 @@ typedef struct {
     uint32_t status;      // 0=Request, 1=Success, <0=Error
 } HyperampBulkDescriptor;
 
+// ==================== 签名验证 ====================
+
+// Service IDs
+#define SERVICE_ECHO              0
+#define SERVICE_ENCRYPT           1
+#define SERVICE_DECRYPT           2
+#define SERVICE_VERIFY_ONLY       3   // 仅验证签名
+#define SERVICE_VERIFY_ENCRYPT    4   // 验证后加密
+#define SERVICE_VERIFY_DECRYPT    5   // 验证后解密
+
+// 签名验证状态码
+#define AUTH_OK                   0
+#define AUTH_FAILED_BAD_MAGIC    -1
+#define AUTH_FAILED_BAD_SIG      -2
+#define AUTH_FAILED_BAD_LEN      -3
+
+// 签名头魔数
+#define SIG_MAGIC                 0x53494731  // "SIG1"
+
+// 简化版签名头 (用于原型验证)
+typedef struct {
+    uint32_t magic;           // 必须是 SIG_MAGIC (0x53494731)
+    uint16_t sig_len;         // 签名长度 (ECDSA: 70-72字节)
+    uint16_t reserved;
+    uint32_t payload_len;     // 原始数据长度
+    uint8_t  signature[72];   // ECDSA-P256 签名 (最大72字节)
+} __attribute__((packed)) HyperampSignedHeader;
+
+// 可信公钥 (用户生成的 ECDSA-P256 公钥, DER格式)
+static const unsigned char TRUSTED_PUBKEY_DER[] = {
+  0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
+  0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03,
+  0x42, 0x00, 0x04, 0x1b, 0x2e, 0xcc, 0x7e, 0x35, 0xd0, 0xbe, 0xda, 0x02,
+  0xce, 0x77, 0x25, 0xf0, 0xbf, 0xa6, 0x87, 0x4f, 0x40, 0xa4, 0xe4, 0xff,
+  0xaf, 0xee, 0xb4, 0x5d, 0x12, 0xee, 0x5c, 0x4a, 0x87, 0x07, 0xfe, 0x07,
+  0xbf, 0x40, 0xce, 0xb0, 0xb4, 0xa7, 0xcc, 0x7d, 0x7a, 0x85, 0xaf, 0xd3,
+  0x23, 0x8d, 0x16, 0xf1, 0x8c, 0x1a, 0x89, 0xca, 0x0c, 0x79, 0x07, 0x43,
+  0xca, 0xb9, 0x28, 0xf1, 0xfb, 0xfb, 0x43
+};
+static const unsigned int TRUSTED_PUBKEY_DER_LEN = 91;
+
+
 /* ==================== 安全内存操作 ==================== */
 
 static inline void hyperamp_safe_memset(volatile void *dst, uint8_t val, size_t len)
