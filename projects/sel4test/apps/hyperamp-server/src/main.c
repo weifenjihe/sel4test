@@ -297,6 +297,68 @@ static int service_proxy_message(volatile void *data_ptr, size_t length, uint8_t
 }
 
 /**
+ * @brief 简单字符串搜索 (用于字段验证)
+ */
+static const char* simple_strstr(const char *haystack, size_t haystack_len, 
+                                  const char *needle) {
+    size_t needle_len = 0;
+    while (needle[needle_len]) needle_len++;
+    
+    if (needle_len > haystack_len) return NULL;
+    
+    for (size_t i = 0; i <= haystack_len - needle_len; i++) {
+        int match = 1;
+        for (size_t j = 0; j < needle_len; j++) {
+            if (haystack[i + j] != needle[j]) {
+                match = 0;
+                break;
+            }
+        }
+        if (match) return &haystack[i];
+    }
+    return NULL;
+}
+
+/**
+ * @brief 验证目标检测数据的字段完整性
+ * 
+ * 检查 JSON 数据中是否包含必需字段:
+ * - ts (时间戳)
+ * - img (图片名)
+ * - lvl (威胁等级)
+ * - scr (评分)
+ * - cnt (目标数量)
+ * - tgt (目标列表)
+ *
+ * @param data 数据指针
+ * @param len 数据长度
+ * @return VALIDATE_OK 或 VALIDATE_FAILED_MISSING
+ */
+static int validate_mission_data(const char *data, size_t len) {
+    const char *required_fields[] = {
+        "\"ts\":",
+        "\"img\":",
+        "\"lvl\":",
+        "\"scr\":",
+        "\"cnt\":",
+        "\"tgt\":",
+    };
+    int num_fields = 6;
+    
+    printf("[seL4] Validating mission data fields...\n");
+    
+    for (int i = 0; i < num_fields; i++) {
+        if (simple_strstr(data, len, required_fields[i]) == NULL) {
+            printf("[seL4] ✗ Missing required field: %s\n", required_fields[i]);
+            return VALIDATE_FAILED_MISSING;
+        }
+    }
+    
+    printf("[seL4] ✓ All required fields present\n");
+    return VALIDATE_OK;
+}
+
+/**
  * @brief 简化版签名验证 
  * 
  * 验证逻辑:
@@ -552,6 +614,48 @@ static int process_bulk_message(void *payload_ptr, size_t len)
                 int result = verify_signed_data((void *)data, desc->length, 
                                                &payload_out, &payload_len);
                 desc->status = (result == AUTH_OK) ? 1 : result;
+            }
+            break;
+        
+        case SERVICE_VALIDATE_ENCRYPT:
+            // 字段验证后加密 (先验证原始数据，再加密)
+            printf("[seL4] Service 7: Validate then Encrypt\n");
+            {
+                // 先验证字段完整性
+                int result = validate_mission_data((const char *)data, desc->length);
+                if (result != VALIDATE_OK) {
+                    desc->status = result;
+                    break;
+                }
+                
+                // 验证通过，执行加密
+                for (size_t i = 0; i < desc->length; i++) {
+                    data[i] ^= 0x5A;
+                }
+                desc->status = 1;
+                printf("[seL4] ✓ Mission data validated and encrypted successfully\n");
+            }
+            break;
+            
+        case SERVICE_VALIDATE_DECRYPT:
+            // 解密后验证字段 (先解密，再验证解密后的数据)
+            printf("[seL4] Service 8: Decrypt then Validate\n");
+            {
+                // 先解密
+                for (size_t i = 0; i < desc->length; i++) {
+                    data[i] ^= 0x5A;
+                }
+                
+                // 再验证解密后的数据
+                int result = validate_mission_data((const char *)data, desc->length);
+                if (result != VALIDATE_OK) {
+                    printf("[seL4] ✗ Decrypted data failed validation\n");
+                    desc->status = result;
+                    break;
+                }
+                
+                desc->status = 1;
+                printf("[seL4] ✓ Mission data decrypted and validated\n");
             }
             break;
             
