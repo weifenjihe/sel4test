@@ -1,0 +1,20 @@
+/* rk3588 overlay based on rk3568 overlay (minimal) */
+
+/ {
+    chosen {
+        seL4,elfloader-devices =
+            "serial2",
+            &{/psci},
+            &{/timer};
+
+        seL4,kernel-devices =
+            "serial2",
+            &{/interrupt-controller@fe600000},
+            &{/timer};
+    };
+
+    memory@00000000 {
+        device_type = "memory";
+        reg = <0x00 0x50000000 0x00 0x30000000>;
+    };
+};

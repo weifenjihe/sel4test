@@ -117,6 +117,7 @@ BOOT_CODE static bool_t arch_init_freemem(p_region_t ui_p_reg,
 }
 
 #ifndef CONFIG_PLAT_PHYTIUM_PI
+#ifndef CONFIG_PLAT_RK3588
 BOOT_CODE static void init_irqs(cap_t root_cnode_cap)
 {
     unsigned i;
@@ -153,6 +154,7 @@ BOOT_CODE static void init_irqs(cap_t root_cnode_cap)
     /* provide the IRQ control cap */
     write_slot(SLOT_PTR(pptr_of_cap(root_cnode_cap), seL4_CapIRQControl), cap_irq_control_cap_new());
 }
+#endif
 #endif /* CONFIG_PLAT_PHYTIUM_PI */
 #ifdef CONFIG_ARM_SMMU
 BOOT_CODE static void init_smmu(cap_t root_cnode_cap)
@@ -241,8 +243,10 @@ BOOT_CODE static bool_t init_cpu(void)
     }
 #endif /* CONFIG_HAVE_FPU */
 #ifndef CONFIG_PLAT_PHYTIUM_PI
+#ifndef CONFIG_PLAT_RK3588
     cpu_initLocalIRQController();
     // printf("[kernel] Local IRQ Controller initialization DISABLED for shared memory testing\n");
+#endif
 #endif
 #ifdef CONFIG_ENABLE_BENCHMARKS
     arm_init_ccnt();
@@ -251,8 +255,10 @@ BOOT_CODE static bool_t init_cpu(void)
     /* Export selected CPU features for access by PL0 */
     armv_init_user_access();
 #ifndef CONFIG_PLAT_PHYTIUM_PI
+#ifndef CONFIG_PLAT_RK3588
     initTimer();
     // printf("[kernel] Timer initialization DISABLED for shared memory testing\n");
+#endif
 #endif
     return true;
 }
@@ -262,8 +268,10 @@ BOOT_CODE static bool_t init_cpu(void)
 BOOT_CODE static void init_plat(void)
 {
 #ifndef CONFIG_PLAT_PHYTIUM_PI
+#ifndef CONFIG_PLAT_RK3588
     initIRQController();
     // printf("[kernel] Global IRQ Controller initialization DISABLED for shared memory testing\n");
+#endif
 #endif
     initL2Cache();
 #ifdef CONFIG_ARM_SMMU
@@ -451,9 +459,11 @@ static BOOT_CODE bool_t try_init_kernel(
     /* create the cap for managing thread domains */
     create_domain_cap(root_cnode_cap);
 #ifndef CONFIG_PLAT_PHYTIUM_PI
+#ifndef CONFIG_PLAT_RK3588
     /* initialise the IRQ states and provide the IRQ control cap */
     init_irqs(root_cnode_cap);
     // printf("[kernel] IRQ states initialization DISABLED for shared memory testing\n");
+#endif
 #endif
 #ifdef CONFIG_ARM_SMMU
     /* initialise the SMMU and provide the SMMU control caps*/

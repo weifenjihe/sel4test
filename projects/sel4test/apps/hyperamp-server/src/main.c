@@ -18,7 +18,7 @@
 #include "highspeed_proxy_frontend_sim.h"  // 前端协议栈模拟器
 
 /* ==================== 配置常量 ==================== */
-#if defined(CONFIG_PLAT_IMX8MP_EVK)
+#if defined(CONFIG_PLAT_IMX8MP_EVK) || defined(CONFIG_PLAT_RK3588)
     // imx8MP 平台共享内存配置
     #define SHM_TX_QUEUE_PADDR  0x7E000000UL
     #define SHM_RX_QUEUE_PADDR  0x7E001000UL

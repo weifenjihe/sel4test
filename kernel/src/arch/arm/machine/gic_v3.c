@@ -88,6 +88,7 @@ static inline uint64_t sgir_word_from_args(word_t irq, word_t target)
            | ((t >> 24) & 0xff) << ICC_SGI1R_AFF2_SHIFT; // AFF3
 }
 #ifndef CONFIG_PLAT_PHYTIUM_PI
+#ifndef CONFIG_PLAT_RK3588
 /* Wait for completion of a distributor change */
 /** DONT_TRANSLATE */
 static uint32_t gicv3_do_wait_for_rwp(volatile uint32_t *ctlr_addr)
@@ -301,6 +302,7 @@ BOOT_CODE static void cpu_iface_init(void)
     /* Sync at once at the end of cpu interface configuration */
     isb();
 }
+#endif
 #endif /* End of CONFIG_PLAT_PHYTIUM_PI */
 void setIRQTrigger(irq_t irq, bool_t trigger)
 {
@@ -343,7 +345,9 @@ void setIRQTrigger(irq_t irq, bool_t trigger)
 BOOT_CODE void initIRQController(void)
 {
 #ifndef CONFIG_PLAT_PHYTIUM_PI
+#ifndef CONFIG_PLAT_RK3588
     dist_init();
+#endif
 #endif
 }
 
@@ -355,8 +359,10 @@ BOOT_CODE void cpu_initLocalIRQController(void)
     mpidr_map[CURRENT_CPU_INDEX()] = mpidr;
     active_irq[CURRENT_CPU_INDEX()] = IRQ_NONE;
 #ifndef CONFIG_PLAT_PHYTIUM_PI
+#ifndef CONFIG_PLAT_RK3588
     gicr_init();
     cpu_iface_init();
+#endif
 #endif
 }
 
