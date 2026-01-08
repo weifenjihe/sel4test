@@ -12,7 +12,7 @@ include_guard(GLOBAL)
 function(ApplyData61ElfLoaderSettings kernel_platform kernel_sel4_arch)
     set(
         binary_list
-        "tx1;hikey;odroidc2;odroidc4;imx8mq-evk;imx8mm-evk;imx8mp-evk;phytium-pi;hifive;bcm2837;tqma8xqp1gb;imx93;bcm2711;rocketchip;star64;cheshire"
+        "tx1;hikey;odroidc2;odroidc4;imx8mq-evk;imx8mm-evk;imx8mp-evk;phytium-pi;hifive;bcm2837;tqma8xqp1gb;imx93;bcm2711;rocketchip;star64;cheshire;rk3588"
     )
     set(efi_list "tk1;rockpro64;quartz64")
     set(uimage_list "hifive-p550;tx2;am335x")
@@ -77,6 +77,12 @@ function(ApplyData61ElfLoaderSettings kernel_platform kernel_sel4_arch)
     endif()
     if(KernelPlatformHifiveP550)
         set(UseRiscVOpenSBI OFF CACHE BOOL "" FORCE)
+    endif()
+    if(KernelPlatformRk3588)
+        set(IMAGE_START_ADDR
+            0x52000000
+            CACHE INTERNAL "" FORCE
+        )
     endif()
     if(KernelPlatformPhytiumPi)
         # Use 0xb0400000 for ELF Loader to match hypervisor load address

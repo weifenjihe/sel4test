@@ -11,7 +11,7 @@
 
 // 共享内存物理地址定义 4KB 队列
 // 与 Linux 端布局匹配 (统一使用 4KB 对齐)
-#if defined(CONFIG_PLAT_IMX8MP_EVK)
+#if defined(CONFIG_PLAT_IMX8MP_EVK) || defined(CONFIG_PLAT_RK3588)
     // imx8MP 平台共享内存配置
     #define SHM_TX_QUEUE_PADDR  0x7E000000UL
     #define SHM_RX_QUEUE_PADDR  0x7E001000UL
