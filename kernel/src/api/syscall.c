@@ -515,6 +515,62 @@ static void handleYield(void)
 #endif
 }
 
+struct ipcServerItem
+{
+    tcb_t* ServerThread;
+    void* func;
+    void* stk;
+};
+struct ipcServerItem ipcServerList[SERVER_PORT_NUM];
+int ipcServerList_top=10;
+static void handleRegister(void)
+{
+    seL4_Word portInfo,funcInfo;
+    tcb_t *thread;
+    struct ipcServerItem newIpc;
+    thread = NODE_STATE(ksCurThread);
+
+#ifdef CONFIG_ARCH_X86_64
+    portInfo =getRegister(thread,  R9);
+    funcInfo =getRegister(thread,  R15);
+#endif
+
+#if defined(CONFIG_ARCH_AARCH32) || defined(CONFIG_ARCH_AARCH64)
+    
+    portInfo = getRegister(thread,  X4);
+    funcInfo = getRegister(thread,  X5);
+#endif
+
+#ifdef CONFIG_ARCH_RISCV
+    portInfo = getRegister(thread,  a4);
+    funcInfo = getRegister(thread,  a5);
+#endif
+
+#ifdef CONFIG_ARCH_LOONGARCH
+    portInfo = getRegister(thread,  a4);
+    funcInfo = getRegister(thread,  a5);
+#endif
+
+    newIpc.ServerThread=thread;
+    newIpc.func=(void *)funcInfo;
+    newIpc.stk=(void *)portInfo;
+    ipcServerList[ipcServerList_top]=newIpc;
+#ifdef CONFIG_ARCH_X86_64
+    setRegister(thread, R9,(seL4_Word)ipcServerList_top);
+#endif
+
+#if defined(CONFIG_ARCH_AARCH32) || defined(CONFIG_ARCH_AARCH64)
+    setRegister(thread, X4,(seL4_Word)ipcServerList_top);   
+#endif
+#ifdef CONFIG_ARCH_RISCV
+    setRegister(thread, a4,(seL4_Word)ipcServerList_top);   
+#endif
+#ifdef CONFIG_ARCH_LOONGARCH
+    setRegister(thread, a4,(seL4_Word)ipcServerList_top);   
+#endif
+    ipcServerList_top=(ipcServerList_top+1)%SERVER_PORT_NUM;
+}
+
 exception_t handleSyscall(syscall_t syscall)
 {
     exception_t ret;
@@ -554,6 +610,10 @@ exception_t handleSyscall(syscall_t syscall)
                     handleInterrupt(irq);
                 }
             }
+            break;
+
+        case SysRegister:
+            handleRegister();
             break;
 
         case SysRecv:

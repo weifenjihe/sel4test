@@ -29,6 +29,9 @@ VISIBLE SECTION(".vectors.text");
 void c_handle_fastpath_call(word_t cptr, word_t msgInfo)
 VISIBLE SECTION(".vectors.text");
 
+void c_handle_fastpath_call_boost(word_t cptr, word_t msgInfo)
+VISIBLE SECTION(".vectors.text");
+
 void c_handle_fastpath_signal(word_t cptr, word_t msgInfo)
 VISIBLE SECTION(".vectors.text");
 

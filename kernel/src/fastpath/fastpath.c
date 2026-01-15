@@ -550,6 +550,192 @@ void NORETURN fastpath_reply_recv(word_t cptr, word_t msgInfo)
 #endif
 }
 
+extern struct ipcServerItem ipcServerList[SERVER_PORT_NUM];
+void NORETURN fastpath_callBoost(word_t cptr, word_t msgInfo)
+{
+    seL4_MessageInfo_t info;
+    // cap_t ep_cap;
+    // endpoint_t *ep_ptr;
+    word_t length;
+    tcb_t *dest;
+    word_t badge;
+    cap_t newVTable;
+    vspace_root_t *cap_pd;
+    pde_t stored_hw_asid;
+
+
+    info.words[0]=msgInfo;
+    length = seL4_MessageInfo_get_length(info);
+ 
+    int port;
+#ifdef CONFIG_ARCH_X86_64
+    port=NODE_STATE(ksCurThread)->tcbArch.tcbContext.registers[R15];
+#endif
+
+#ifdef CONFIG_ARCH_AARCH32
+    port=NODE_STATE(ksCurThread)->tcbArch.tcbContext.registers[R5];
+#endif
+
+#ifdef CONFIG_ARCH_AARCH64
+    port=NODE_STATE(ksCurThread)->tcbArch.tcbContext.registers[X5];
+#endif
+
+#ifdef CONFIG_ARCH_RISCV
+    port=NODE_STATE(ksCurThread)->tcbArch.tcbContext.registers[a5];
+#endif    
+
+#ifdef CONFIG_ARCH_LOONGARCH
+    port=NODE_STATE(ksCurThread)->tcbArch.tcbContext.registers[a5];
+#endif
+    dest=ipcServerList[port].ServerThread;
+
+    /* ensure we are not single stepping the destination in ia32 */
+#if defined(CONFIG_HARDWARE_DEBUG_API) && defined(CONFIG_ARCH_IA32)
+    if (unlikely(dest->tcbArch.tcbContext.breakpointState.single_step_enabled)) {
+        slowpath(SysCall);
+    }
+#endif
+
+    /* Get destination thread.*/
+    newVTable = TCB_PTR_CTE_PTR(dest, tcbVTable)->cap;
+
+    /* Get vspace root. */
+    cap_pd = cap_vtable_cap_get_vspace_root_fp(newVTable);
+
+#ifdef CONFIG_ARCH_AARCH32
+    /* Get HW ASID */
+    stored_hw_asid = cap_pd[PD_ASID_SLOT];
+#endif
+
+#ifdef CONFIG_ARCH_LOONGARCH
+    stored_hw_asid.words[0] = cap_page_table_cap_get_capPTMappedASID(newVTable);
+#endif
+
+#ifdef CONFIG_ARCH_X86_64
+    /* borrow the stored_hw_asid for PCID */
+    stored_hw_asid.words[0] = cap_pml4_cap_get_capPML4MappedASID_fp(newVTable);
+#endif
+
+#ifdef CONFIG_ARCH_IA32
+    /* stored_hw_asid is unused on ia32 fastpath, but gets passed into a function below. */
+    stored_hw_asid.words[0] = 0;
+#endif
+#ifdef CONFIG_ARCH_AARCH64
+    /* Need to test that the ASID is still valid */
+    asid_t asid = cap_vspace_cap_get_capVSMappedASID(newVTable);
+    asid_map_t asid_map = findMapForASID(asid);
+    if (unlikely(asid_map_get_type(asid_map) != asid_map_asid_map_vspace ||
+                 VSPACE_PTR(asid_map_asid_map_vspace_get_vspace_root(asid_map)) != cap_pd)) {
+        slowpath(SysCall);
+    }
+#ifdef CONFIG_ARM_HYPERVISOR_SUPPORT
+    /* Ensure the vmid is valid. */
+    if (unlikely(!asid_map_asid_map_vspace_get_stored_vmid_valid(asid_map))) {
+        slowpath(SysCall);
+    }
+    /* vmids are the tags used instead of hw_asids in hyp mode */
+    stored_hw_asid.words[0] = asid_map_asid_map_vspace_get_stored_hw_vmid(asid_map);
+#else
+    stored_hw_asid.words[0] = asid;
+#endif
+#endif
+
+#ifdef CONFIG_ARCH_RISCV
+    /* Get HW ASID */
+    stored_hw_asid.words[0] = cap_page_table_cap_get_capPTMappedASID(newVTable);
+#endif
+
+
+
+#ifdef CONFIG_ARCH_AARCH32
+    if (unlikely(!pde_pde_invalid_get_stored_asid_valid(stored_hw_asid))) {
+        slowpath(SysCall);
+    }
+#endif
+
+    /*
+     * --- POINT OF NO RETURN ---
+     *
+     * At this stage, we have committed to performing the IPC.
+     */
+    
+#ifdef CONFIG_BENCHMARK_TRACK_KERNEL_ENTRIES
+    ksKernelEntry.is_fastpath = true;
+#endif
+
+    // badge = cap_endpoint_cap_get_capEPBadge(ep_cap);
+    badge=(seL4_Word)1;    
+    /* Unlink dest <-> reply, link src (cur thread) <-> reply */
+    thread_state_ptr_set_tsType_np(&NODE_STATE(ksCurThread)->tcbState,
+                                   ThreadState_BlockedOnReply);
+#ifdef CONFIG_KERNEL_MCS
+    thread_state_ptr_set_replyObject_np(&dest->tcbState, 0);
+    thread_state_ptr_set_replyObject_np(&NODE_STATE(ksCurThread)->tcbState, REPLY_REF(reply));
+    reply->replyTCB = NODE_STATE(ksCurThread);
+
+    sched_context_t *sc = NODE_STATE(ksCurThread)->tcbSchedContext;
+    sc->scTcb = dest;
+    dest->tcbSchedContext = sc;
+    NODE_STATE(ksCurThread)->tcbSchedContext = NULL;
+
+    reply_t *old_caller = sc->scReply;
+    reply->replyPrev = call_stack_new(REPLY_REF(sc->scReply), false);
+    if (unlikely(old_caller)) {
+        old_caller->replyNext = call_stack_new(REPLY_REF(reply), false);
+    }
+    reply->replyNext = call_stack_new(SC_REF(sc), true);
+    sc->scReply = reply;
+#else
+    /* Get sender reply slot */
+    cte_t *replySlot = TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbReply);
+
+    /* Get dest caller slot */
+    cte_t *callerSlot = TCB_PTR_CTE_PTR(dest, tcbCaller);
+
+    /* Insert reply cap */
+    word_t replyCanGrant = thread_state_ptr_get_blockingIPCCanGrant(&dest->tcbState);
+    // printf("replyCanGrant:%lu\n",replyCanGrant);
+    cap_reply_cap_ptr_new_np(&callerSlot->cap, replyCanGrant, 0,
+                             TCB_REF(NODE_STATE(ksCurThread)));
+    mdb_node_ptr_set_mdbPrev_np(&callerSlot->cteMDBNode, CTE_REF(replySlot));
+    mdb_node_ptr_mset_mdbNext_mdbRevocable_mdbFirstBadged(
+        &replySlot->cteMDBNode, CTE_REF(callerSlot), 1, 1);
+#endif
+
+    fastpath_copy_mrs(length, NODE_STATE(ksCurThread), dest);
+ 
+#ifdef CONFIG_ARCH_X86_64
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[RBX]=(unsigned long)ipcServerList[port].stk;
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[NextIP]=(unsigned long)ipcServerList[port].func;
+#endif  
+#ifdef CONFIG_ARCH_AARCH32
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[SP]=(unsigned long)ipcServerList[port].stk;
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[NextIP]=(unsigned long)ipcServerList[port].func;
+#endif
+
+#ifdef CONFIG_ARCH_AARCH64
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[X21]=(unsigned long)ipcServerList[port].stk;
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[NextIP]=(unsigned long)ipcServerList[port].func;
+#endif
+
+#ifdef CONFIG_ARCH_RISCV
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[SP]=(unsigned long)ipcServerList[port].stk;
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[NextIP]=(unsigned long)ipcServerList[port].func;
+#endif
+#ifdef CONFIG_ARCH_LOONGARCH
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[SP]=(unsigned long)ipcServerList[port].stk;
+    NODE_STATE(dest)->tcbArch.tcbContext.registers[NextIP]=(unsigned long)ipcServerList[port].func;
+#endif
+    /* Dest thread is set Running, but not queued. */
+    thread_state_ptr_set_tsType_np(&dest->tcbState,
+                                   ThreadState_Running);
+    switchToThread_fp(dest, cap_pd, stored_hw_asid);
+
+    msgInfo = wordFromMessageInfo(seL4_MessageInfo_set_capsUnwrapped(info, 0));
+    fastpath_restore(badge, msgInfo, NODE_STATE(ksCurThread));
+}
+
+
 #ifdef CONFIG_SIGNAL_FASTPATH
 #ifdef CONFIG_ARCH_ARM
 static inline

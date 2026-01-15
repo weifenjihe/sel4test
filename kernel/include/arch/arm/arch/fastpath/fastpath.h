@@ -42,4 +42,11 @@ void fastpath_reply_recv(word_t cptr, word_t r_msgInfo)
 #endif
 NORETURN;
 
+static inline
+#ifdef CONFIG_KERNEL_MCS
+void fastpath_callBoost(word_t cptr, word_t r_msgInfo)
+#else
+void fastpath_callBoost(word_t cptr, word_t r_msgInfo)
+#endif
+NORETURN;
 

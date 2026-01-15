@@ -198,6 +198,8 @@ lel_syscall:
 #ifdef CONFIG_FASTPATH
     cmp     x7, #SYSCALL_CALL
     b.eq    c_handle_fastpath_call
+    cmp     x7, #SYSCALL_CALL_BOOST
+    b.eq    c_handle_fastpath_call_boost  
 #ifdef CONFIG_SIGNAL_FASTPATH
     cmp     x7, #SYSCALL_SEND
     b.eq    c_handle_fastpath_signal

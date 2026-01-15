@@ -70,6 +70,44 @@ LIBSEL4_INLINE_FUNC seL4_MessageInfo_t
 seL4_Call(seL4_CPtr dest, seL4_MessageInfo_t msgInfo);
 
 /**
+ * @xmlonly <manual name="Call" label="sel4_call"/> @endxmlonly
+ * @brief  Call a capability
+ *
+ * @xmlonly
+ * <docref>See <autoref label="sec:sys_call"/></docref>
+ * @endxmlonly
+ *
+ * @param[in] dest The capability to be invoked.
+ * @param[in] msgInfo The messageinfo structure for the IPC.
+ *
+ * @return A `seL4_MessageInfo_t` structure
+ * @xmlonly
+ * <docref>as described in <autoref label="sec:messageinfo"/></docref>
+ * @endxmlonly
+ */
+LIBSEL4_INLINE_FUNC seL4_MessageInfo_t
+seL4_IpcRegister(seL4_CPtr dest, seL4_MessageInfo_t msgInfo,seL4_Word port,seL4_Word func);
+
+/**
+ * @xmlonly <manual name="CallBoost" label="sel4_CallBoost"/> @endxmlonly
+ * @brief  Call a capability
+ *
+ * @xmlonly
+ * <docref>See <autoref label="sec:sys_CallBoost"/></docref>
+ * @endxmlonly
+ *
+ * @param[in] dest The capability to be invoked.
+ * @param[in] msgInfo The messageinfo structure for the IPC.
+ *
+ * @return A `seL4_MessageInfo_t` structure
+ * @xmlonly
+ * <docref>as described in <autoref label="sec:messageinfo"/></docref>
+ * @endxmlonly
+ */
+LIBSEL4_INLINE_FUNC seL4_MessageInfo_t
+seL4_CallBoost(seL4_CPtr dest, seL4_MessageInfo_t msgInfo,seL4_Word port);
+
+/**
  * @xmlonly <manual name="Reply" label="sel4_reply"/> @endxmlonly
  * @brief Perform a send to a one-off reply capability stored when
  *        the thread was last called. Does nothing if there is no

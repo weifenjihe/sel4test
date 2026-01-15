@@ -192,6 +192,22 @@ void VISIBLE c_handle_fastpath_reply_recv(word_t cptr, word_t msgInfo)
     UNREACHABLE();
 }
 
+ALIGN(L1_CACHE_LINE_SIZE)
+void VISIBLE c_handle_fastpath_call_boost(word_t cptr, word_t msgInfo)
+{
+    NODE_LOCK_SYS;
+
+    c_entry_hook();
+#ifdef TRACK_KERNEL_ENTRIES
+    benchmark_debug_syscall_start(cptr, msgInfo, SysCall);
+    ksKernelEntry.is_fastpath = 1;
+#endif /* DEBUG */
+
+    fastpath_callBoost(cptr, msgInfo);
+
+    UNREACHABLE();
+}
+
 #endif
 
 #ifdef CONFIG_ARM_HYPERVISOR_SUPPORT

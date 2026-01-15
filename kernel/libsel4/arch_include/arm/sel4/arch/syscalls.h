@@ -22,6 +22,46 @@ LIBSEL4_INLINE_FUNC void seL4_Send(seL4_CPtr dest, seL4_MessageInfo_t msgInfo)
     arm_sys_send(seL4_SysSend, dest, msgInfo.words[0], seL4_GetMR(0), seL4_GetMR(1), seL4_GetMR(2), seL4_GetMR(3));
 }
 
+LIBSEL4_INLINE_FUNC seL4_MessageInfo_t seL4_IpcRegister(seL4_CPtr dest, seL4_MessageInfo_t msgInfo,seL4_Word port,seL4_Word func)
+{
+    seL4_MessageInfo_t info;
+    seL4_Word msg0 = seL4_GetMR(0);
+    seL4_Word msg1 = seL4_GetMR(1);
+    seL4_Word msg2 = port;
+    seL4_Word msg3 = func;
+
+    arm_sys_send_recv(seL4_SysRegister, dest, &dest, msgInfo.words[0], &info.words[0], &msg0, &msg1,
+        &msg2, &msg3, 0);
+    /* Write out the data back to memory. */
+    seL4_SetMR(0, msg0);
+    seL4_SetMR(1, msg1);
+    seL4_SetMR(2, msg2);
+    seL4_SetMR(3, msg3);
+
+    return info;
+}
+
+
+LIBSEL4_INLINE_FUNC seL4_MessageInfo_t seL4_CallBoost(seL4_CPtr dest, seL4_MessageInfo_t msgInfo,seL4_Word port)
+{
+    seL4_MessageInfo_t info;
+    seL4_Word msg0 = seL4_GetMR(0);
+    seL4_Word msg1 = seL4_GetMR(1);
+    seL4_Word msg2 = seL4_GetMR(2);
+    seL4_Word msg3 = port;
+
+    arm_sys_send_recv(seL4_SysCallBoost, dest, &dest, msgInfo.words[0], &info.words[0], &msg0, &msg1,
+        &msg2, &msg3, 0);
+
+    /* Write out the data back to memory. */
+    seL4_SetMR(0, msg0);
+    seL4_SetMR(1, msg1);
+    seL4_SetMR(2, msg2);
+    seL4_SetMR(3, msg3);
+
+    return info;
+}
+
 LIBSEL4_INLINE_FUNC void seL4_SendWithMRs(seL4_CPtr dest, seL4_MessageInfo_t msgInfo,
                                           seL4_Word *mr0, seL4_Word *mr1, seL4_Word *mr2, seL4_Word *mr3)
 {
