@@ -15,6 +15,7 @@
 #include <api/debug.h>
 
 #define TIME_ARG_SIZE (sizeof(ticks_t) / sizeof(word_t))
+#define SERVER_PORT_NUM 128
 
 #ifdef CONFIG_KERNEL_MCS
 #define MCS_DO_IF_BUDGET(_block) \
